@@ -25,7 +25,7 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-background">
+      <main className="flex h-screen w-full items-center justify-center bg-background overflow-hidden">
         <div className="flex flex-col items-center gap-4">
           <GlimpseLogo className="h-16 w-16 text-primary" />
           <div className="flex flex-col items-center gap-2">
@@ -33,7 +33,7 @@ export default function Home() {
             <Skeleton className="h-4 w-[200px]" />
           </div>
         </div>
-      </div>
+      </main>
     );
   }
 
@@ -43,11 +43,15 @@ export default function Home() {
 
   if (selectedUser) {
     return (
-      <div className="flex h-screen w-screen flex-col">
+      <main className="h-screen w-full flex flex-col overflow-hidden">
         <ChatWindow recipient={selectedUser} onBack={handleBack} />
-      </div>
+      </main>
     );
   }
 
-  return <ChatLayout onSelectUser={handleSelectUser} selectedUser={selectedUser} />;
+  return (
+    <main className="h-screen w-full overflow-hidden">
+      <ChatLayout onSelectUser={handleSelectUser} selectedUser={selectedUser} />
+    </main>
+  );
 }
