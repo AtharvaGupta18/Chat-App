@@ -39,7 +39,6 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
 
   const chatId =
@@ -50,6 +49,7 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
   useEffect(() => {
     if (!chatId) return;
 
+    setLoading(true);
     const messagesQuery = query(
       collection(firestore, "chats", chatId, "messages"),
       orderBy("createdAt", "asc")
@@ -62,10 +62,13 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
       } as Message));
       setMessages(newMessages);
       setLoading(false);
+    }, (error) => {
+        console.error("Error fetching messages:", error);
+        setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [chatId]);
+  }, [chatId, recipient]);
 
   useEffect(() => {
     if (viewportRef.current) {
@@ -75,7 +78,7 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
              }
         }, 100);
     }
-  }, [messages, recipient]);
+  }, [messages]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,6 +95,7 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
         if(!chatDoc.exists()){
              await setDoc(chatDocRef, {
                 users: [currentUser.uid, recipient.uid],
+                userEmails: [currentUser.email, recipient.email],
                 createdAt: serverTimestamp(),
                 lastMessage: messageText,
                 lastMessageTimestamp: serverTimestamp(),
@@ -140,13 +144,10 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
         </Avatar>
         <div>
           <h2 className="font-semibold">{recipient.email}</h2>
-          <p className="text-xs text-muted-foreground">
-            Online
-          </p>
         </div>
       </header>
 
-      <ScrollArea className="flex-1" ref={scrollAreaRef} viewportRef={viewportRef}>
+      <ScrollArea className="flex-1" viewportRef={viewportRef}>
         <div className="p-4 space-y-4">
             {messages.map((message) => (
             <div

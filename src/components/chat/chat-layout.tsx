@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import type { User } from "firebase/auth";
 import {
   Sidebar,
   SidebarInset,
@@ -11,7 +10,6 @@ import {
 import SidebarContent from "./sidebar-content";
 import ChatWindow from "./chat-window";
 import { WhisperLinkLogo } from "../icons";
-import { Button } from "../ui/button";
 
 export interface ChatUser {
   uid: string;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
 import { User } from "lucide-react";
 import {
   SidebarContent,
@@ -27,16 +27,18 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(firestore, "users"), orderBy("createdAt", "desc"));
+    if (!currentUser) return;
+
+    const q = query(collection(firestore, "users"), where("uid", "!=", currentUser.uid));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const usersData: ChatUser[] = [];
       querySnapshot.forEach((doc) => {
-        if (doc.id !== currentUser?.uid) {
-          const data = doc.data();
-          usersData.push({
-            uid: doc.id,
-            email: data.email,
-          });
+        const data = doc.data();
+        if(data.email) { // only show users with emails
+             usersData.push({
+                uid: data.uid,
+                email: data.email,
+            });
         }
       });
       setUsers(usersData);
@@ -44,7 +46,7 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
     });
 
     return () => unsubscribe();
-  }, [currentUser?.uid]);
+  }, [currentUser]);
 
   const sortedUsers = useMemo(() => {
     return [...users].sort((a, b) => {
@@ -58,6 +60,7 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
     return (
       <SidebarContent>
         <SidebarGroup>
+           <SidebarGroupLabel>All Users</SidebarGroupLabel>
           <SidebarMenu>
             <SidebarMenuSkeleton showIcon />
             <SidebarMenuSkeleton showIcon />

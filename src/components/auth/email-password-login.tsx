@@ -3,10 +3,11 @@
 import { useState } from "react";
 import {
   signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   linkWithCredential,
   EmailAuthProvider,
 } from "firebase/auth";
-import { doc, serverTimestamp, setDoc, getDoc } from "firebase/firestore";
+import { doc, serverTimestamp, setDoc, getDoc, collection } from "firebase/firestore";
 import { Loader2, KeyRound, Mail } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -25,15 +26,16 @@ import { useAuth } from "../providers";
 export default function EmailPasswordLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    if (!currentUser || !currentUser.isAnonymous) {
+    if (isLogin) {
       // Regular Sign In
       try {
         await signInWithEmailAndPassword(auth, email, password);
@@ -52,60 +54,29 @@ export default function EmailPasswordLogin() {
         setLoading(false);
       }
     } else {
-      // Link anonymous account with email/password
+      // Sign Up
       try {
-        const credential = EmailAuthProvider.credential(email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const newUser = userCredential.user;
         
-        // Check if user with this email already exists
-        const userDocRef = doc(firestore, "users", `email_${email}`);
-        const userDoc = await getDoc(userDocRef);
-
-        if (userDoc.exists()) {
-             toast({
-                variant: "destructive",
-                title: "Sign-up Failed",
-                description: "An account with this email already exists. Please sign in instead.",
-            });
-            setLoading(false);
-            return;
-        }
-
-        await linkWithCredential(currentUser, credential);
-
-        const userDocRefOld = doc(firestore, "users", currentUser.uid);
-        const userDocOld = await getDoc(userDocRefOld);
-
-        if (userDocOld.exists()) {
-            const userData = userDocOld.data();
-            await setDoc(userDocRef, { ...userData, email });
-        } else {
-            await setDoc(userDocRef, {
-                uid: currentUser.uid,
-                email: email,
-                createdAt: serverTimestamp(),
-            }, { merge: true });
-        }
-
-
-        toast({
-          title: "Account Linked",
-          description: "Your anonymous account is now linked with your email.",
+        await setDoc(doc(firestore, "users", newUser.uid), {
+            uid: newUser.uid,
+            email: newUser.email,
+            createdAt: serverTimestamp(),
         });
+        
+        toast({
+          title: "Account Created",
+          description: "Your account has been created successfully.",
+        });
+
       } catch (error: any) {
-        console.error("Error linking account:", error);
-        if (error.code === 'auth/email-already-in-use') {
-             toast({
-                variant: "destructive",
-                title: "Sign-up Failed",
-                description: "An account with this email already exists. Please sign in instead.",
-            });
-        } else {
-            toast({
-                variant: "destructive",
-                title: "Sign-up Failed",
-                description: error.message,
-            });
-        }
+        console.error("Error signing up:", error);
+        toast({
+            variant: "destructive",
+            title: "Sign-up Failed",
+            description: error.message,
+        });
       } finally {
         setLoading(false);
       }
@@ -116,18 +87,16 @@ export default function EmailPasswordLogin() {
     <Card className="w-full max-w-sm border-0 shadow-none sm:border sm:shadow-sm">
       <CardHeader className="items-center text-center">
         <CardTitle className="text-2xl">
-          {currentUser?.isAnonymous
-            ? "Create an Account"
-            : "Welcome Back"}
+          {isLogin ? "Welcome Back" : "Create an Account"}
         </CardTitle>
         <CardDescription>
-          {currentUser?.isAnonymous
-            ? "Save your session by creating an account."
-            : "Sign in to your account to continue."}
+          {isLogin
+            ? "Sign in to your account to continue."
+            : "Enter your email and password to sign up."}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSignIn} className="space-y-4">
+        <form onSubmit={handleAuthAction} className="space-y-4">
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
@@ -154,9 +123,15 @@ export default function EmailPasswordLogin() {
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {currentUser?.isAnonymous ? "Create Account" : "Sign In"}
+            {isLogin ? "Sign In" : "Create Account"}
           </Button>
         </form>
+         <div className="mt-4 text-center text-sm">
+          {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+          <Button variant="link" className="p-0 h-auto" onClick={() => setIsLogin(!isLogin)}>
+            {isLogin ? "Sign Up" : "Sign In"}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

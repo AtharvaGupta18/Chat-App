@@ -17,7 +17,7 @@ import {
 import { WhisperLinkLogo } from "../icons";
 import UserList from "./user-list";
 import type { ChatUser } from "./chat-layout";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Avatar, AvatarFallback } from "../ui/avatar";
 
 interface SidebarContentProps {
   onSelectUser: (user: ChatUser) => void;
@@ -54,7 +54,7 @@ export default function SidebarContent({ onSelectUser, selectedUser }: SidebarCo
                 <div className="flex flex-col truncate">
                   <span className="text-sm font-medium">You</span>
                   <span className="text-xs text-muted-foreground truncate">
-                    {user?.email}
+                    {user?.email || "Anonymous User"}
                   </span>
                 </div>
               </div>
