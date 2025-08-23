@@ -64,16 +64,15 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
         const messagesRef = collection(firestore, 'chats', chatId, 'messages');
         const q = query(
           messagesRef,
-          where('senderId', '==', recipient.uid)
+          where('senderId', '==', recipient.uid),
+          where('status', '!=', 'read')
         );
     
         try {
           const querySnapshot = await getDocs(q);
           const batch = writeBatch(firestore);
           querySnapshot.forEach((doc) => {
-            if (doc.data().status !== 'read') {
-              batch.update(doc.ref, { status: 'read' });
-            }
+            batch.update(doc.ref, { status: 'read' });
           });
           await batch.commit();
         } catch (error) {
@@ -303,5 +302,3 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
     </div>
   );
 }
-
-    
