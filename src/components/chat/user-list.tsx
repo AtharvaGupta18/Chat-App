@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, Fragment } from "react";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
 import { Search } from "lucide-react";
 import { firestore } from "@/lib/firebase";
 import { useAuth } from "@/components/providers";
@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn, generateAvatarColor, getInitials } from "@/lib/utils";
 import { Skeleton } from "../ui/skeleton";
 import { Button } from "../ui/button";
+import { formatDistanceToNow } from 'date-fns';
 
 interface UserListProps {
   onSelectUser: (user: ChatUser) => void;
@@ -24,6 +25,11 @@ interface ChatData {
   id: string;
   unreadCount: { [key: string]: number };
   users: string[];
+  lastMessage?: string;
+  lastMessageTimestamp?: {
+    seconds: number;
+    nanoseconds: number;
+  };
 }
 
 export default function UserList({ onSelectUser, selectedUser }: UserListProps) {
@@ -56,7 +62,11 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
       setLoading(false);
     });
 
-    const chatsQuery = query(collection(firestore, "chats"), where("users", "array-contains", currentUser.uid));
+    const chatsQuery = query(
+        collection(firestore, "chats"), 
+        where("users", "array-contains", currentUser.uid),
+        orderBy("lastMessageTimestamp", "desc")
+    );
     const chatsUnsubscribe = onSnapshot(chatsQuery, (snapshot) => {
         const chatsData = snapshot.docs.map(doc => ({
             id: doc.id,
@@ -71,22 +81,36 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
     };
   }, [currentUser, toast]);
 
-  const filteredUsers = useMemo(() => {
+  const getChatDataForUser = (otherUserUid: string) => {
+    if (!currentUser) return null;
+    const chatId = [currentUser.uid, otherUserUid].sort().join("_");
+    return chats.find(c => c.id === chatId) || null;
+  };
+
+  const filteredAndSortedUsers = useMemo(() => {
     return users.filter(user => 
       user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.displayName?.toLowerCase().includes(searchQuery.toLowerCase())
     ).sort((a, b) => {
+      const chatA = getChatDataForUser(a.uid);
+      const chatB = getChatDataForUser(b.uid);
+
+      const timeA = chatA?.lastMessageTimestamp?.seconds || 0;
+      const timeB = chatB?.lastMessageTimestamp?.seconds || 0;
+
+      if (timeA !== timeB) {
+        return timeB - timeA;
+      }
+      
       const nameA = a.displayName || a.email || '';
       const nameB = b.displayName || b.email || '';
       return nameA.localeCompare(nameB);
     });
-  }, [users, searchQuery]);
+  }, [users, searchQuery, chats]);
 
-  const getUnreadCountForUser = (otherUserUid: string) => {
-    if (!currentUser) return 0;
-    const chatId = [currentUser.uid, otherUserUid].sort().join("_");
-    const chat = chats.find(c => c.id === chatId);
-    return chat?.unreadCount?.[currentUser.uid] || 0;
+  const getUnreadCountForUser = (chat: ChatData | null) => {
+    if (!currentUser || !chat) return 0;
+    return chat.unreadCount?.[currentUser.uid] || 0;
   };
 
 
@@ -94,9 +118,15 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
     return (
        <div className="p-4 space-y-2">
             <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-16 w-full" />
-            <Skeleton className="h-16 w-full" />
-            <Skeleton className="h-16 w-full" />
+            {[...Array(4)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4 p-2">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                    </div>
+                </div>
+            ))}
         </div>
     );
   }
@@ -113,35 +143,46 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
             />
         </div>
         <div className="space-y-2">
-          {filteredUsers.map((user, index) => {
-            const unreadCount = getUnreadCountForUser(user.uid);
+          {filteredAndSortedUsers.map((user, index) => {
+            const chatData = getChatDataForUser(user.uid);
+            const unreadCount = getUnreadCountForUser(chatData);
             const userAvatarColors = generateAvatarColor(user.uid);
+            const lastMessageTimestamp = chatData?.lastMessageTimestamp;
+            const timeAgo = lastMessageTimestamp ? formatDistanceToNow(new Date(lastMessageTimestamp.seconds * 1000), { addSuffix: true }) : '';
+
             return (
             <Fragment key={user.uid}>
               <Button
                   variant={selectedUser?.uid === user.uid ? "secondary" : "ghost"}
                   onClick={() => onSelectUser(user)}
-                  className="w-full h-auto justify-start p-2 relative"
+                  className="w-full h-auto justify-start p-2"
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 w-full">
                       <Avatar className={cn("h-12 w-12 ring-2 ring-offset-2 ring-offset-background", userAvatarColors.ring)}>
                       <AvatarImage src={user.photoURL || undefined} alt={user.displayName || ''} />
                       <AvatarFallback className={cn("text-white text-xl", userAvatarColors.bg)}>
                           {getInitials(user.displayName || user.email || "")}
                       </AvatarFallback>
                       </Avatar>
-                      <div className="flex flex-col items-start truncate">
-                      <span className="truncate font-medium">{user.displayName || user.email}</span>
-                      <span className="truncate text-sm text-muted-foreground">@{user.username}</span>
+                      <div className="flex flex-col items-start truncate flex-1">
+                        <div className="flex justify-between w-full">
+                            <span className="truncate font-medium">{user.displayName || user.email}</span>
+                            {timeAgo && <span className="text-xs text-muted-foreground ml-2 flex-shrink-0">{timeAgo}</span>}
+                        </div>
+                        <div className="flex items-center justify-between w-full">
+                            <span className="truncate text-sm text-muted-foreground pr-4">
+                                {chatData?.lastMessage || `Start a conversation with @${user.username}`}
+                            </span>
+                            {unreadCount > 0 && (
+                                <Badge className="h-6 min-w-[1.5rem] text-sm flex-shrink-0">
+                                    {unreadCount}
+                                </Badge>
+                            )}
+                        </div>
                       </div>
                   </div>
-                  {unreadCount > 0 && (
-                      <Badge className="absolute right-2 top-1/2 -translate-y-1/2 h-6 min-w-[1.5rem] text-sm">
-                          {unreadCount}
-                      </Badge>
-                  )}
                 </Button>
-                {index < filteredUsers.length - 1 && (
+                {index < filteredAndSortedUsers.length - 1 && (
                   <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-muted/20 to-transparent" />
                 )}
             </Fragment>
@@ -150,3 +191,4 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
       </div>
   );
 }
+
