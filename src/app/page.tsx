@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/components/providers";
-import EmailPasswordLogin from "@/components/auth/email-password-login";
+import AuthLayout from "@/components/auth/auth-layout";
 import ChatLayout from "@/components/chat/chat-layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WhisperLinkLogo } from "@/components/icons";
@@ -23,8 +23,8 @@ export default function Home() {
     );
   }
 
-  if (!user) {
-    return <EmailPasswordLogin />;
+  if (!user || user.isAnonymous) {
+    return <AuthLayout />;
   }
 
   return <ChatLayout />;
