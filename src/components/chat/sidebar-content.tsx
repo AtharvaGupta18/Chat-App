@@ -33,7 +33,7 @@ export default function SidebarContent({ onSelectUser, selectedUser }: SidebarCo
     <div className="flex flex-col h-screen">
       <header className="flex items-center gap-2 p-4 border-b">
         <GlimpseLogo className="h-8 w-8 text-primary" />
-        <span className="text-lg font-semibold">Glimpse</span>
+        <span className="text-lg font-semibold">Chat App</span>
       </header>
       <div className="flex-1">
         <ScrollArea className="h-full">

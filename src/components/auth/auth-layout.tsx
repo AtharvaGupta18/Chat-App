@@ -10,9 +10,9 @@ export default function AuthLayout() {
       <div className="flex flex-col items-center gap-6 w-full max-w-sm">
         <GlimpseLogo className="h-24 w-24 text-primary" />
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Welcome to Glimpse</h1>
+          <h1 className="text-3xl font-bold">Welcome to Chat App</h1>
           <p className="text-muted-foreground">
-            A secure, real-time one-to-one chat application.
+            A simple and modern chat application.
           </p>
         </div>
         <EmailPasswordLogin />
