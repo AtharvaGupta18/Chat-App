@@ -23,7 +23,7 @@ import { doc, updateDoc, getDocs, collection, query, where } from "firebase/fire
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { firestore, storage, auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { getInitials } from "@/lib/utils";
+import { cn, generateAvatarColor, getInitials } from "@/lib/utils";
 
 export default function ProfileDialog() {
   const { user, userDetails } = useAuth();
@@ -135,6 +135,8 @@ export default function ProfileDialog() {
     fileInputRef.current?.click();
   };
 
+  if (!user || !userDetails) return null;
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -151,7 +153,7 @@ export default function ProfileDialog() {
             <div className="relative">
               <Avatar className="h-24 w-24 cursor-pointer" onClick={handleAvatarClick}>
                 <AvatarImage src={profilePicPreview || undefined} alt="Profile Picture"/>
-                <AvatarFallback className="text-4xl">
+                <AvatarFallback className={cn("text-4xl text-white", generateAvatarColor(user.uid))}>
                   {getInitials(name || userDetails?.email || "")}
                 </AvatarFallback>
               </Avatar>

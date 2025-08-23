@@ -20,7 +20,7 @@ import UserList from "./user-list";
 import type { ChatUser } from "./chat-layout";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import ProfileDialog from "../profile/profile-dialog";
-import { getInitials } from "@/lib/utils";
+import { cn, generateAvatarColor, getInitials } from "@/lib/utils";
 
 interface SidebarContentProps {
   onSelectUser: (user: ChatUser) => void;
@@ -49,12 +49,12 @@ export default function SidebarContent({ onSelectUser, selectedUser }: SidebarCo
           <SidebarMenuItem>
             <div className="flex w-full items-center justify-between">
               <div className="flex items-center gap-2 overflow-hidden">
-                <Avatar className="h-8 w-8">
+                {userDetails && <Avatar className="h-8 w-8">
                   <AvatarImage src={userDetails?.photoURL || undefined} alt={userDetails?.displayName || ''} />
-                  <AvatarFallback>
+                  <AvatarFallback className={cn("text-white", generateAvatarColor(userDetails.uid))}>
                     {getInitials(userDetails?.displayName || userDetails?.email || "")}
                   </AvatarFallback>
-                </Avatar>
+                </Avatar>}
                 <div className="flex flex-col truncate">
                   <span className="text-sm font-medium">{userDetails?.displayName || 'You'}</span>
                   <span className="text-xs text-muted-foreground truncate">

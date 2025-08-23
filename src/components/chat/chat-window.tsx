@@ -29,7 +29,7 @@ import type { ChatUser } from "./chat-layout";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { getInitials } from "@/lib/utils";
+import { getInitials, generateAvatarColor } from "@/lib/utils";
 
 interface ChatWindowProps {
   recipient: ChatUser;
@@ -59,19 +59,26 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
     if (!chatId || !currentUser) return;
 
     const markMessagesAsRead = async () => {
-      if (!chatId || !recipient) return;
-      const messagesRef = collection(firestore, "chats", chatId, "messages");
-      const q = query(messagesRef, where("senderId", "==", recipient.uid));
-      
-      const querySnapshot = await getDocs(q);
-      const batch = writeBatch(firestore);
-      querySnapshot.forEach((messageDoc) => {
-        if (messageDoc.data().status !== 'read') {
-          batch.update(messageDoc.ref, { status: "read" });
+        if (!chatId || !recipient || !currentUser) return;
+    
+        const messagesRef = collection(firestore, 'chats', chatId, 'messages');
+        const q = query(
+          messagesRef,
+          where('senderId', '==', recipient.uid),
+          where('status', '!=', 'read')
+        );
+    
+        try {
+          const querySnapshot = await getDocs(q);
+          const batch = writeBatch(firestore);
+          querySnapshot.forEach((doc) => {
+            batch.update(doc.ref, { status: 'read' });
+          });
+          await batch.commit();
+        } catch (error) {
+          console.error("Error marking messages as read, maybe the index is missing?", error);
         }
-      });
-      await batch.commit();
-    };
+      };
 
     const resetUnreadCount = async () => {
       const chatDocRef = doc(firestore, "chats", chatId);
@@ -201,7 +208,7 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
            <header className="flex items-center gap-4 border-b p-4 shadow-sm cursor-pointer hover:bg-muted transition-colors">
             <Avatar>
               <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
-              <AvatarFallback>
+              <AvatarFallback className={cn("text-white", generateAvatarColor(recipient.uid))}>
                 {getInitials(recipient.displayName || recipient.email || "")}
               </AvatarFallback>
             </Avatar>
@@ -215,7 +222,7 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
                  <div className="flex flex-col items-center text-center gap-4">
                     <Avatar className="h-24 w-24">
                         <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
-                        <AvatarFallback className="text-4xl">
+                        <AvatarFallback className={cn("text-4xl text-white", generateAvatarColor(recipient.uid))}>
                            {getInitials(recipient.displayName || recipient.email || "")}
                         </AvatarFallback>
                     </Avatar>
@@ -246,7 +253,7 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
                 {message.senderId !== currentUser?.uid && (
                 <Avatar className="h-8 w-8">
                     <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
-                    <AvatarFallback>
+                    <AvatarFallback className={cn("text-white", generateAvatarColor(recipient.uid))}>
                         {getInitials(recipient.displayName || recipient.email || "")}
                     </AvatarFallback>
                 </Avatar>
@@ -264,10 +271,10 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
                       <MessageStatus status={message.status} />
                    )}
                 </div>
-                 {message.senderId === currentUser?.uid && (
+                 {message.senderId === currentUser?.uid && userDetails && (
                   <Avatar className="h-8 w-8">
                      <AvatarImage src={userDetails?.photoURL || undefined} alt={userDetails?.displayName || ''}/>
-                    <AvatarFallback>
+                    <AvatarFallback className={cn("text-white", generateAvatarColor(userDetails.uid))}>
                       {getInitials(userDetails?.displayName || userDetails?.email || "")}
                     </AvatarFallback>
                   </Avatar>
