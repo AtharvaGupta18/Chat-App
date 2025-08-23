@@ -517,7 +517,12 @@ function ChatMessage({
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-2">
+            <div
+              className={cn(
+                "flex items-center gap-2",
+                isCurrentUser ? "flex-row-reverse" : "flex-row"
+              )}
+            >
               <div
                 className={cn(
                   "rounded-lg px-4 py-2 flex flex-col",
