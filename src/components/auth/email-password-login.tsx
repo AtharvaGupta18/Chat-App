@@ -8,7 +8,7 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { doc, serverTimestamp, setDoc, getDocs, query, where, collection } from "firebase/firestore";
-import { Loader2, KeyRound, Mail, User as UserIcon, AtSign, Sparkles } from "lucide-react";
+import { Loader2, KeyRound, Mail, User as UserIcon, AtSign } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { suggestUsernames } from "@/ai/flows/suggest-username-flow";
 
 export default function EmailPasswordLogin() {
   const [name, setName] = useState("");
@@ -31,8 +30,6 @@ export default function EmailPasswordLogin() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [suggestLoading, setSuggestLoading] = useState(false);
 
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,33 +104,6 @@ export default function EmailPasswordLogin() {
     }
   };
 
-  const handleSuggestUsernames = async () => {
-    if (!name) {
-      toast({
-        variant: "destructive",
-        title: "Name required",
-        description: "Please enter your full name to get suggestions.",
-      });
-      return;
-    }
-    setSuggestLoading(true);
-    setSuggestions([]);
-    try {
-      const result = await suggestUsernames({ name });
-      setSuggestions(result.suggestions);
-    } catch (error) {
-      console.error("Error suggesting usernames:", error);
-      toast({
-        variant: "destructive",
-        title: "Suggestion Failed",
-        description: "Could not generate username suggestions at this time.",
-      });
-    } finally {
-      setSuggestLoading(false);
-    }
-  };
-
-
   return (
     <Card className="w-full max-w-sm border-0 shadow-none sm:border sm:shadow-sm">
       <CardHeader className="items-center text-center">
@@ -171,42 +141,9 @@ export default function EmailPasswordLogin() {
                 placeholder="Username"
                 disabled={loading}
                 required
-                className="pl-10 pr-24"
+                className="pl-10"
               />
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="sm" 
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-8"
-                onClick={handleSuggestUsernames}
-                disabled={suggestLoading || !name}
-              >
-                {suggestLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Suggest
-                  </>
-                )}
-              </Button>
             </div>
-             {suggestions.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {suggestions.map((suggestion) => (
-                  <Button
-                    key={suggestion}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-auto px-2 py-1 text-xs"
-                    onClick={() => setUsername(suggestion)}
-                  >
-                    {suggestion}
-                  </Button>
-                ))}
-              </div>
-            )}
           </>
           )}
           <div className="relative">
