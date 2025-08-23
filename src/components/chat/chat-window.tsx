@@ -15,8 +15,10 @@ import {
   writeBatch,
   increment,
   updateDoc,
+  where,
+  getDocs,
 } from "firebase/firestore";
-import { SendHorizonal, User as UserIcon } from "lucide-react";
+import { SendHorizonal, User as UserIcon, Check, CheckCheck } from "lucide-react";
 import { firestore } from "@/lib/firebase";
 import { useAuth } from "@/components/providers";
 import { Input } from "@/components/ui/input";
@@ -36,6 +38,7 @@ interface Message {
   text: string;
   senderId: string;
   createdAt: any;
+  status: 'sent' | 'delivered' | 'read';
 }
 
 export default function ChatWindow({ recipient }: ChatWindowProps) {
@@ -53,6 +56,17 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
   useEffect(() => {
     if (!chatId || !currentUser) return;
 
+    const markMessagesAsRead = async () => {
+        const messagesRef = collection(firestore, "chats", chatId, "messages");
+        const q = query(messagesRef, where("senderId", "==", recipient.uid), where("status", "!=", "read"));
+        const querySnapshot = await getDocs(q);
+        const batch = writeBatch(firestore);
+        querySnapshot.forEach(doc => {
+            batch.update(doc.ref, { status: "read" });
+        });
+        await batch.commit();
+    };
+
     const resetUnreadCount = async () => {
       const chatDocRef = doc(firestore, "chats", chatId);
       const chatDoc = await getDoc(chatDocRef);
@@ -64,6 +78,7 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
     };
     
     resetUnreadCount();
+    markMessagesAsRead();
 
     setLoading(true);
     const messagesQuery = query(
@@ -79,6 +94,7 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
       setMessages(newMessages);
       setLoading(false);
        resetUnreadCount();
+       markMessagesAsRead();
     }, (error) => {
         console.error("Error fetching messages:", error);
         setLoading(false);
@@ -136,6 +152,7 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
         text: messageText,
         senderId: currentUser.uid,
         createdAt: serverTimestamp(),
+        status: 'delivered',
       });
       
       await batch.commit();
@@ -143,6 +160,16 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
     } catch (error) {
       console.error("Error sending message: ", error);
     }
+  };
+
+  const MessageStatus = ({ status }: { status: Message['status'] }) => {
+    if (status === 'read') {
+      return <CheckCheck className="h-4 w-4 text-sky-400" />;
+    }
+    if (status === 'delivered') {
+      return <CheckCheck className="h-4 w-4 text-muted-foreground" />;
+    }
+    return <Check className="h-4 w-4 text-muted-foreground" />;
   };
 
   if (loading) {
@@ -195,13 +222,16 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
                 )}
                 <div
                 className={cn(
-                    "max-w-xs rounded-lg px-4 py-2 md:max-w-md lg:max-w-lg",
+                    "max-w-xs rounded-lg px-4 py-2 md:max-w-md lg:max-w-lg flex items-end gap-2",
                     message.senderId === currentUser?.uid
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted"
                 )}
                 >
-                <p className="text-sm">{message.text}</p>
+                  <p className="text-sm break-words">{message.text}</p>
+                   {message.senderId === currentUser?.uid && (
+                      <MessageStatus status={message.status} />
+                   )}
                 </div>
                  {message.senderId === currentUser?.uid && (
                   <Avatar className="h-8 w-8">
