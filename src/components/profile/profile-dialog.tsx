@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/components/providers";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,13 +28,22 @@ export default function ProfileDialog() {
   const { user, userDetails } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState(userDetails?.displayName || "");
-  const [username, setUsername] = useState(userDetails?.username || "");
-  const [bio, setBio] = useState(userDetails?.bio || "");
+  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
+  const [bio, setBio] = useState("");
   const [profilePic, setProfilePic] = useState<File | null>(null);
-  const [profilePicPreview, setProfilePicPreview] = useState<string | null>(userDetails?.photoURL || null);
+  const [profilePicPreview, setProfilePicPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (userDetails) {
+      setName(userDetails.displayName || "");
+      setUsername(userDetails.username || "");
+      setBio(userDetails.bio || "");
+      setProfilePicPreview(userDetails.photoURL || null);
+    }
+  }, [userDetails, open]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -49,9 +58,15 @@ export default function ProfileDialog() {
     setLoading(true);
 
     try {
-      let photoURL = userDetails?.photoURL || "";
+      const dataToUpdate: { [key: string]: any } = {};
+      const authProfileToUpdate: { [key: string]: any } = {};
 
       if (username !== userDetails.username) {
+        if (username.trim() === "") {
+            toast({ variant: "destructive", title: "Error", description: "Username cannot be empty." });
+            setLoading(false);
+            return;
+        }
         const usersRef = collection(firestore, "users");
         const q = query(usersRef, where("username", "==", username));
         const querySnapshot = await getDocs(q);
@@ -64,33 +79,44 @@ export default function ProfileDialog() {
             setLoading(false);
             return;
         }
+        dataToUpdate.username = username;
       }
 
       if (profilePic) {
         const storageRef = ref(storage, `profile_pictures/${user.uid}`);
         await uploadBytes(storageRef, profilePic);
-        photoURL = await getDownloadURL(storageRef);
+        const photoURL = await getDownloadURL(storageRef);
+        if (photoURL !== userDetails.photoURL) {
+            dataToUpdate.photoURL = photoURL;
+            authProfileToUpdate.photoURL = photoURL;
+        }
       }
       
-      const userDocRef = doc(firestore, "users", user.uid);
-      await updateDoc(userDocRef, {
-        displayName: name,
-        username: username,
-        bio: bio,
-        photoURL: photoURL,
-      });
+      if (name !== userDetails.displayName) {
+          dataToUpdate.displayName = name;
+          authProfileToUpdate.displayName = name;
+      }
+      
+      if (bio !== userDetails.bio) {
+          dataToUpdate.bio = bio;
+      }
 
-      if(auth.currentUser){
-        await updateProfile(auth.currentUser, {
-            displayName: name,
-            photoURL: photoURL,
+      if (Object.keys(dataToUpdate).length > 0) {
+        const userDocRef = doc(firestore, "users", user.uid);
+        await updateDoc(userDocRef, dataToUpdate);
+      }
+
+      if (Object.keys(authProfileToUpdate).length > 0 && auth.currentUser) {
+        await updateProfile(auth.currentUser, authProfileToUpdate);
+      }
+      
+      if(Object.keys(dataToUpdate).length > 0 || Object.keys(authProfileToUpdate).length > 0) {
+        toast({
+          title: "Success",
+          description: "Profile updated successfully.",
         });
       }
 
-      toast({
-        title: "Success",
-        description: "Profile updated successfully.",
-      });
       setOpen(false);
     } catch (error) {
       console.error("Error updating profile:", error);
