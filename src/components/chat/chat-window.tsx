@@ -18,7 +18,7 @@ import {
   where,
   getDocs,
 } from "firebase/firestore";
-import { SendHorizonal, User as UserIcon, Check, CheckCheck } from "lucide-react";
+import { SendHorizonal, User as UserIcon, Check, CheckCheck, ArrowLeft } from "lucide-react";
 import { firestore } from "@/lib/firebase";
 import { useAuth } from "@/components/providers";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,7 @@ import { getInitials, generateAvatarColor } from "@/lib/utils";
 
 interface ChatWindowProps {
   recipient: ChatUser;
+  onBack: () => void;
 }
 
 interface Message {
@@ -43,7 +44,7 @@ interface Message {
   status: 'sent' | 'delivered' | 'read';
 }
 
-export default function ChatWindow({ recipient }: ChatWindowProps) {
+export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
   const { user: currentUser, userDetails } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -90,9 +91,10 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
       let hasUnreadMessages = false;
       snapshot.docChanges().forEach(change => {
         if (change.type === 'added') {
-            const message = change.doc.data() as Message;
+            const messageDoc = change.doc;
+            const message = messageDoc.data() as Message;
             if (message.senderId === recipient.uid && message.status !== 'read') {
-                batch.update(change.doc.ref, { status: 'read' });
+                batch.update(messageDoc.ref, { status: 'read' });
                 hasUnreadMessages = true;
             }
         }
@@ -114,7 +116,7 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
     });
 
     return () => unsubscribe();
-  }, [chatId, currentUser, recipient]);
+  }, [chatId, currentUser, recipient.uid]);
 
   useEffect(() => {
     if (viewportRef.current) {
@@ -206,42 +208,47 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <Dialog>
-        <DialogTrigger asChild>
-           <header className="flex items-center gap-4 border-b p-4 shadow-sm cursor-pointer hover:bg-muted transition-colors">
-            <Avatar className={cn('ring-2 ring-offset-2 ring-offset-background', recipientAvatarColors.ring)}>
-              <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
-              <AvatarFallback className={cn("text-white", recipientAvatarColors.bg)}>
-                {getInitials(recipient.displayName || recipient.email || "")}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h2 className="font-semibold">{recipient.displayName || recipient.email}</h2>
-            </div>
-          </header>
-        </DialogTrigger>
-        <DialogContent>
-            <DialogHeader>
-                 <div className="flex flex-col items-center text-center gap-4">
-                    <Avatar className={cn('h-24 w-24 ring-2 ring-offset-2 ring-offset-background', recipientAvatarColors.ring)}>
-                        <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
-                        <AvatarFallback className={cn("text-4xl text-white", recipientAvatarColors.bg)}>
-                           {getInitials(recipient.displayName || recipient.email || "")}
-                        </AvatarFallback>
+      <header className="flex items-center gap-4 border-b p-4 shadow-sm">
+        <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden">
+            <ArrowLeft />
+        </Button>
+        <Dialog>
+            <DialogTrigger asChild>
+                <div className="flex items-center gap-4 cursor-pointer hover:bg-muted p-2 rounded-md transition-colors flex-1">
+                    <Avatar className={cn('ring-2 ring-offset-2 ring-offset-background', recipientAvatarColors.ring)}>
+                    <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
+                    <AvatarFallback className={cn("text-white", recipientAvatarColors.bg)}>
+                        {getInitials(recipient.displayName || recipient.email || "")}
+                    </AvatarFallback>
                     </Avatar>
                     <div>
-                        <DialogTitle className="text-2xl">{recipient.displayName}</DialogTitle>
-                        <DialogDescription>@{recipient.username}</DialogDescription>
+                    <h2 className="font-semibold">{recipient.displayName || recipient.email}</h2>
                     </div>
                 </div>
-            </DialogHeader>
-            {recipient.bio && (
-                <div className="text-center text-sm text-muted-foreground p-4 bg-muted/50 rounded-lg">
-                    {recipient.bio}
-                </div>
-            )}
-        </DialogContent>
-      </Dialog>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <div className="flex flex-col items-center text-center gap-4">
+                        <Avatar className={cn('h-24 w-24 ring-2 ring-offset-2 ring-offset-background', recipientAvatarColors.ring)}>
+                            <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
+                            <AvatarFallback className={cn("text-4xl text-white", recipientAvatarColors.bg)}>
+                            {getInitials(recipient.displayName || recipient.email || "")}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <DialogTitle className="text-2xl">{recipient.displayName}</DialogTitle>
+                            <DialogDescription>@{recipient.username}</DialogDescription>
+                        </div>
+                    </div>
+                </DialogHeader>
+                {recipient.bio && (
+                    <div className="text-center text-sm text-muted-foreground p-4 bg-muted/50 rounded-lg">
+                        {recipient.bio}
+                    </div>
+                )}
+            </DialogContent>
+        </Dialog>
+      </header>
      
       <ScrollArea className="flex-1" viewportRef={viewportRef}>
         <div className="p-4 space-y-4">
