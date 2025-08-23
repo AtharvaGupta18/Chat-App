@@ -3,16 +3,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
-import { User, Search } from "lucide-react";
-import {
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarMenuSkeleton,
-} from "@/components/ui/sidebar";
+import { Search } from "lucide-react";
 import { firestore } from "@/lib/firebase";
 import { useAuth } from "@/components/providers";
 import type { ChatUser } from "./chat-layout";
@@ -21,6 +12,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "../ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn, generateAvatarColor, getInitials } from "@/lib/utils";
+import { Skeleton } from "../ui/skeleton";
+import { Button } from "../ui/button";
 
 interface UserListProps {
   onSelectUser: (user: ChatUser) => void;
@@ -99,23 +92,18 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
 
   if (loading) {
     return (
-      <SidebarContent>
-        <SidebarGroup>
-           <SidebarGroupLabel>All Users</SidebarGroupLabel>
-          <SidebarMenu>
-            <SidebarMenuSkeleton showIcon />
-            <SidebarMenuSkeleton showIcon />
-            <SidebarMenuSkeleton showIcon />
-          </SidebarMenu>
-        </SidebarGroup>
-      </SidebarContent>
+       <div className="p-4 space-y-2">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+        </div>
     );
   }
 
   return (
-    <SidebarContent>
-      <SidebarGroup>
-        <div className="relative mb-2">
+    <div className="p-4 space-y-4">
+        <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input 
                 placeholder="Search users..."
@@ -124,39 +112,37 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
                 className="pl-10"
             />
         </div>
-        <SidebarGroupLabel>All Users</SidebarGroupLabel>
-        <SidebarMenu>
+        <div className="space-y-2">
           {filteredUsers.map((user) => {
             const unreadCount = getUnreadCountForUser(user.uid);
             const userAvatarColors = generateAvatarColor(user.uid);
             return (
-            <SidebarMenuItem key={user.uid}>
-              <SidebarMenuButton
+            <Button
+                key={user.uid}
+                variant={selectedUser?.uid === user.uid ? "secondary" : "ghost"}
                 onClick={() => onSelectUser(user)}
-                isActive={selectedUser?.uid === user.uid}
-                className="w-full justify-start relative"
-                tooltip={user.displayName || user.email || 'Unknown user'}
+                className="w-full h-auto justify-start p-2 relative"
               >
-                <Avatar className={cn("h-6 w-6 ring-2 ring-offset-2 ring-offset-background", userAvatarColors.ring)}>
-                  <AvatarImage src={user.photoURL || undefined} alt={user.displayName || ''} />
-                  <AvatarFallback className={cn("text-white", userAvatarColors.bg)}>
-                    {getInitials(user.displayName || user.email || "")}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col truncate">
-                  <span className="truncate font-medium">{user.displayName || user.email}</span>
-                  <span className="truncate text-xs text-muted-foreground">@{user.username}</span>
+                <div className="flex items-center gap-4">
+                    <Avatar className={cn("h-12 w-12 ring-2 ring-offset-2 ring-offset-background", userAvatarColors.ring)}>
+                    <AvatarImage src={user.photoURL || undefined} alt={user.displayName || ''} />
+                    <AvatarFallback className={cn("text-white text-xl", userAvatarColors.bg)}>
+                        {getInitials(user.displayName || user.email || "")}
+                    </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col items-start truncate">
+                    <span className="truncate font-medium">{user.displayName || user.email}</span>
+                    <span className="truncate text-sm text-muted-foreground">@{user.username}</span>
+                    </div>
                 </div>
                 {unreadCount > 0 && (
-                    <Badge className="absolute right-2 top-1/2 -translate-y-1/2 h-5 min-w-[1.25rem] px-1.5 text-xs">
+                    <Badge className="absolute right-2 top-1/2 -translate-y-1/2 h-6 min-w-[1.5rem] text-sm">
                         {unreadCount}
                     </Badge>
                 )}
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+              </Button>
           )})}
-        </SidebarMenu>
-      </SidebarGroup>
-    </SidebarContent>
+        </div>
+      </div>
   );
 }

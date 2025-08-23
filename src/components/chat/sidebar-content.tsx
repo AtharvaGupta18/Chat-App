@@ -1,26 +1,19 @@
 
 "use client";
 
-import { LogOut, User as UserIcon } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { signOut } from "firebase/auth";
 
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/components/providers";
-import {
-  SidebarContent as SC,
-  SidebarHeader,
-  SidebarFooter,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarSeparator,
-} from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 import { WhisperLinkLogo } from "../icons";
 import UserList from "./user-list";
 import type { ChatUser } from "./chat-layout";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import ProfileDialog from "../profile/profile-dialog";
 import { cn, generateAvatarColor, getInitials } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface SidebarContentProps {
   onSelectUser: (user: ChatUser) => void;
@@ -37,49 +30,44 @@ export default function SidebarContent({ onSelectUser, selectedUser }: SidebarCo
   const userAvatarColors = userDetails ? generateAvatarColor(userDetails.uid) : {};
 
   return (
-    <SC className="flex flex-col">
-      <SidebarHeader>
-        <div className="flex items-center gap-2">
-          <WhisperLinkLogo className="h-8 w-8 text-primary" />
-          <span className="text-lg font-semibold">WhisperLink</span>
-        </div>
-      </SidebarHeader>
-      <UserList onSelectUser={onSelectUser} selectedUser={selectedUser} />
-      <SidebarSeparator />
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <div className="flex w-full items-center justify-between">
-              <div className="flex items-center gap-2 overflow-hidden">
-                {userDetails && <Avatar className={cn("h-8 w-8 ring-2 ring-offset-2 ring-offset-background", userAvatarColors.ring)}>
-                  <AvatarImage src={userDetails?.photoURL || undefined} alt={userDetails?.displayName || ''} />
-                  <AvatarFallback className={cn("text-white", userAvatarColors.bg)}>
-                    {getInitials(userDetails?.displayName || userDetails?.email || "")}
-                  </AvatarFallback>
-                </Avatar>}
-                <div className="flex flex-col truncate">
-                  <span className="text-sm font-medium">{userDetails?.displayName || 'You'}</span>
-                  <span className="text-xs text-muted-foreground truncate">
-                    {user?.email}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center">
-                 <ProfileDialog />
-                <SidebarMenuButton
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 flex-shrink-0"
-                  onClick={handleLogout}
-                  tooltip="Logout"
-                >
-                  <LogOut />
-                </SidebarMenuButton>
-              </div>
+    <div className="flex flex-col h-screen">
+      <header className="flex items-center gap-2 p-4 border-b">
+        <WhisperLinkLogo className="h-8 w-8 text-primary" />
+        <span className="text-lg font-semibold">WhisperLink</span>
+      </header>
+      <ScrollArea className="flex-1">
+        <UserList onSelectUser={onSelectUser} selectedUser={selectedUser} />
+      </ScrollArea>
+      <footer className="p-4 border-t">
+        <div className="flex w-full items-center justify-between">
+            <div className="flex items-center gap-2 overflow-hidden">
+            {userDetails && <Avatar className={cn("h-8 w-8 ring-2 ring-offset-2 ring-offset-background", userAvatarColors.ring)}>
+                <AvatarImage src={userDetails?.photoURL || undefined} alt={userDetails?.displayName || ''} />
+                <AvatarFallback className={cn("text-white", userAvatarColors.bg)}>
+                {getInitials(userDetails?.displayName || userDetails?.email || "")}
+                </AvatarFallback>
+            </Avatar>}
+            <div className="flex flex-col truncate">
+                <span className="text-sm font-medium">{userDetails?.displayName || 'You'}</span>
+                <span className="text-xs text-muted-foreground truncate">
+                {user?.email}
+                </span>
             </div>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
-    </SC>
+            </div>
+            <div className="flex items-center">
+                <ProfileDialog />
+                <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 flex-shrink-0"
+                onClick={handleLogout}
+                title="Logout"
+                >
+                <LogOut className="h-5 w-5"/>
+                </Button>
+            </div>
+        </div>
+      </footer>
+    </div>
   );
 }
