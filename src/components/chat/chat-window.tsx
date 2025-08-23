@@ -58,11 +58,13 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
 
     const markMessagesAsRead = async () => {
         const messagesRef = collection(firestore, "chats", chatId, "messages");
-        const q = query(messagesRef, where("senderId", "==", recipient.uid), where("status", "!=", "read"));
+        const q = query(messagesRef, where("senderId", "==", recipient.uid));
         const querySnapshot = await getDocs(q);
         const batch = writeBatch(firestore);
         querySnapshot.forEach(doc => {
-            batch.update(doc.ref, { status: "read" });
+            if (doc.data().status !== 'read') {
+                batch.update(doc.ref, { status: "read" });
+            }
         });
         await batch.commit();
     };
