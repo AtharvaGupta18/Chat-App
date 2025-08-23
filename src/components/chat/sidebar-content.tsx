@@ -34,6 +34,8 @@ export default function SidebarContent({ onSelectUser, selectedUser }: SidebarCo
     await signOut(auth);
   };
 
+  const userAvatarColors = userDetails ? generateAvatarColor(userDetails.uid) : {};
+
   return (
     <SC className="flex flex-col">
       <SidebarHeader>
@@ -49,9 +51,9 @@ export default function SidebarContent({ onSelectUser, selectedUser }: SidebarCo
           <SidebarMenuItem>
             <div className="flex w-full items-center justify-between">
               <div className="flex items-center gap-2 overflow-hidden">
-                {userDetails && <Avatar className="h-8 w-8">
+                {userDetails && <Avatar className={cn("h-8 w-8 ring-2 ring-offset-2 ring-offset-background", userAvatarColors.ring)}>
                   <AvatarImage src={userDetails?.photoURL || undefined} alt={userDetails?.displayName || ''} />
-                  <AvatarFallback className={cn("text-white", generateAvatarColor(userDetails.uid))}>
+                  <AvatarFallback className={cn("text-white", userAvatarColors.bg)}>
                     {getInitials(userDetails?.displayName || userDetails?.email || "")}
                   </AvatarFallback>
                 </Avatar>}

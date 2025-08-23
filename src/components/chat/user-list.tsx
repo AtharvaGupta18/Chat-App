@@ -128,6 +128,7 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
         <SidebarMenu>
           {filteredUsers.map((user) => {
             const unreadCount = getUnreadCountForUser(user.uid);
+            const userAvatarColors = generateAvatarColor(user.uid);
             return (
             <SidebarMenuItem key={user.uid}>
               <SidebarMenuButton
@@ -136,9 +137,9 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
                 className="w-full justify-start relative"
                 tooltip={user.displayName || user.email || 'Unknown user'}
               >
-                <Avatar className="h-6 w-6">
+                <Avatar className={cn("h-6 w-6 ring-2 ring-offset-2 ring-offset-background", userAvatarColors.ring)}>
                   <AvatarImage src={user.photoURL || undefined} alt={user.displayName || ''} />
-                  <AvatarFallback className={cn("text-white", generateAvatarColor(user.uid))}>
+                  <AvatarFallback className={cn("text-white", userAvatarColors.bg)}>
                     {getInitials(user.displayName || user.email || "")}
                   </AvatarFallback>
                 </Avatar>

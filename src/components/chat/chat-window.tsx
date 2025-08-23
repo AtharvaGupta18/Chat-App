@@ -88,13 +88,16 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
       // Mark incoming messages as read
       const batch = writeBatch(firestore);
       let hasUnreadMessages = false;
-      snapshot.docs.forEach(doc => {
-          const message = doc.data() as Message;
-          if (message.senderId === recipient.uid && message.status !== 'read') {
-              batch.update(doc.ref, { status: 'read' });
-              hasUnreadMessages = true;
-          }
+      snapshot.docChanges().forEach(change => {
+        if (change.type === 'added') {
+            const message = change.doc.data() as Message;
+            if (message.senderId === recipient.uid && message.status !== 'read') {
+                batch.update(change.doc.ref, { status: 'read' });
+                hasUnreadMessages = true;
+            }
+        }
       });
+
 
       if (hasUnreadMessages) {
           try {
@@ -181,6 +184,9 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
     }
     return <Check className="h-4 w-4 text-primary-foreground/70" />;
   };
+  
+  const recipientAvatarColors = recipient ? generateAvatarColor(recipient.uid) : {};
+  const currentUserAvatarColors = userDetails ? generateAvatarColor(userDetails.uid) : {};
 
   if (loading) {
     return (
@@ -203,9 +209,9 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
       <Dialog>
         <DialogTrigger asChild>
            <header className="flex items-center gap-4 border-b p-4 shadow-sm cursor-pointer hover:bg-muted transition-colors">
-            <Avatar>
+            <Avatar className={cn('ring-2 ring-offset-2 ring-offset-background', recipientAvatarColors.ring)}>
               <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
-              <AvatarFallback className={cn("text-white", generateAvatarColor(recipient.uid))}>
+              <AvatarFallback className={cn("text-white", recipientAvatarColors.bg)}>
                 {getInitials(recipient.displayName || recipient.email || "")}
               </AvatarFallback>
             </Avatar>
@@ -217,9 +223,9 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
         <DialogContent>
             <DialogHeader>
                  <div className="flex flex-col items-center text-center gap-4">
-                    <Avatar className="h-24 w-24">
+                    <Avatar className={cn('h-24 w-24 ring-2 ring-offset-2 ring-offset-background', recipientAvatarColors.ring)}>
                         <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
-                        <AvatarFallback className={cn("text-4xl text-white", generateAvatarColor(recipient.uid))}>
+                        <AvatarFallback className={cn("text-4xl text-white", recipientAvatarColors.bg)}>
                            {getInitials(recipient.displayName || recipient.email || "")}
                         </AvatarFallback>
                     </Avatar>
@@ -248,9 +254,9 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
                 )}
             >
                 {message.senderId !== currentUser?.uid && (
-                <Avatar className="h-8 w-8">
+                <Avatar className={cn('h-8 w-8 ring-2 ring-offset-2 ring-offset-background', recipientAvatarColors.ring)}>
                     <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
-                    <AvatarFallback className={cn("text-white", generateAvatarColor(recipient.uid))}>
+                    <AvatarFallback className={cn("text-white", recipientAvatarColors.bg)}>
                         {getInitials(recipient.displayName || recipient.email || "")}
                     </AvatarFallback>
                 </Avatar>
@@ -269,9 +275,9 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
                    )}
                 </div>
                  {message.senderId === currentUser?.uid && userDetails && (
-                  <Avatar className="h-8 w-8">
+                  <Avatar className={cn('h-8 w-8 ring-2 ring-offset-2 ring-offset-background', currentUserAvatarColors.ring)}>
                      <AvatarImage src={userDetails?.photoURL || undefined} alt={userDetails?.displayName || ''}/>
-                    <AvatarFallback className={cn("text-white", generateAvatarColor(userDetails.uid))}>
+                    <AvatarFallback className={cn("text-white", currentUserAvatarColors.bg)}>
                       {getInitials(userDetails?.displayName || userDetails?.email || "")}
                     </AvatarFallback>
                   </Avatar>

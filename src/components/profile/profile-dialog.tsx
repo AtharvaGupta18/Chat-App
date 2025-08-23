@@ -31,7 +31,6 @@ export default function ProfileDialog() {
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
-  const [profilePicPreview, setProfilePicPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -39,7 +38,6 @@ export default function ProfileDialog() {
       setName(userDetails.displayName || "");
       setUsername(userDetails.username || "");
       setBio(userDetails.bio || "");
-      setProfilePicPreview(userDetails.photoURL || null);
     }
   }, [userDetails, open]);
 
@@ -112,6 +110,8 @@ export default function ProfileDialog() {
   
   if (!user || !userDetails) return null;
 
+  const userAvatarColors = generateAvatarColor(user.uid);
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -126,9 +126,9 @@ export default function ProfileDialog() {
         <div className="space-y-4">
           <div className="flex justify-center">
             <div className="relative">
-              <Avatar className="h-24 w-24 ring-2 ring-offset-2 ring-primary ring-offset-background">
-                <AvatarImage src={profilePicPreview || undefined} alt="Profile Picture"/>
-                <AvatarFallback className={cn("text-4xl text-white", generateAvatarColor(user.uid))}>
+              <Avatar className={cn("h-24 w-24 ring-2 ring-offset-2 ring-offset-background", userAvatarColors.ring)}>
+                <AvatarImage src={userDetails.photoURL || undefined} alt="Profile Picture"/>
+                <AvatarFallback className={cn("text-4xl text-white", userAvatarColors.bg)}>
                   {getInitials(name || userDetails?.email || "")}
                 </AvatarFallback>
               </Avatar>

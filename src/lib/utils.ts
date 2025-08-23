@@ -20,14 +20,14 @@ export function getInitials(name: string) {
 }
 
 const AVATAR_COLORS = [
-    "bg-blue-500",
-    "bg-green-500",
-    "bg-purple-500",
-    "bg-red-500",
-    "bg-yellow-500",
-    "bg-indigo-500",
-    "bg-pink-500",
-    "bg-teal-500",
+    { bg: "bg-blue-500", ring: "ring-blue-600" },
+    { bg: "bg-green-500", ring: "ring-green-600" },
+    { bg: "bg-purple-500", ring: "ring-purple-600" },
+    { bg: "bg-red-500", ring: "ring-red-600" },
+    { bg: "bg-yellow-500", ring: "ring-yellow-600" },
+    { bg: "bg-indigo-500", ring: "ring-indigo-600" },
+    { bg: "bg-pink-500", ring: "ring-pink-600" },
+    { bg: "bg-teal-500", ring: "ring-teal-600" },
 ];
 
 export function generateAvatarColor(id: string) {
