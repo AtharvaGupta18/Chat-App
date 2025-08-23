@@ -28,6 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { ChatUser } from "./chat-layout";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface ChatWindowProps {
   recipient: ChatUser;
@@ -194,18 +195,43 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <header className="flex items-center gap-4 border-b p-4 shadow-sm">
-        <Avatar>
-          <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
-          <AvatarFallback>
-            <UserIcon />
-          </AvatarFallback>
-        </Avatar>
-        <div>
-          <h2 className="font-semibold">{recipient.displayName || recipient.email}</h2>
-        </div>
-      </header>
-
+      <Dialog>
+        <DialogTrigger asChild>
+           <header className="flex items-center gap-4 border-b p-4 shadow-sm cursor-pointer hover:bg-muted transition-colors">
+            <Avatar>
+              <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
+              <AvatarFallback>
+                <UserIcon />
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h2 className="font-semibold">{recipient.displayName || recipient.email}</h2>
+            </div>
+          </header>
+        </DialogTrigger>
+        <DialogContent>
+            <DialogHeader>
+                 <div className="flex flex-col items-center text-center gap-4">
+                    <Avatar className="h-24 w-24">
+                        <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
+                        <AvatarFallback className="text-4xl">
+                            {recipient.displayName?.charAt(0).toUpperCase() || <UserIcon />}
+                        </AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <DialogTitle className="text-2xl">{recipient.displayName}</DialogTitle>
+                        <DialogDescription>@{recipient.username}</DialogDescription>
+                    </div>
+                </div>
+            </DialogHeader>
+            {recipient.bio && (
+                <div className="text-center text-sm text-muted-foreground p-4 bg-muted/50 rounded-lg">
+                    {recipient.bio}
+                </div>
+            )}
+        </DialogContent>
+      </Dialog>
+     
       <ScrollArea className="flex-1" viewportRef={viewportRef}>
         <div className="p-4 space-y-4">
             {messages.map((message) => (
