@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
-import { User } from "lucide-react";
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { collection, onSnapshot, query, where, getDocs } from "firebase/firestore";
+import { User, RefreshCw } from "lucide-react";
 import {
   SidebarContent,
   SidebarGroup,
@@ -11,10 +11,12 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarMenuSkeleton,
+  SidebarGroupAction,
 } from "@/components/ui/sidebar";
 import { firestore } from "@/lib/firebase";
 import { useAuth } from "@/components/providers";
 import type { ChatUser } from "./chat-layout";
+import { useToast } from "@/hooks/use-toast";
 
 interface UserListProps {
   onSelectUser: (user: ChatUser) => void;
@@ -25,10 +27,44 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<ChatUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reloading, setReloading] = useState(false);
+  const { toast } = useToast();
+
+  const fetchUsers = useCallback(async () => {
+    if (!currentUser) return;
+    setReloading(true);
+    try {
+      const q = query(collection(firestore, "users"), where("uid", "!=", currentUser.uid));
+      const querySnapshot = await getDocs(q);
+      const usersData: ChatUser[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.email) {
+          usersData.push({
+            uid: data.uid,
+            email: data.email,
+          });
+        }
+      });
+      setUsers(usersData);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not fetch users.",
+      });
+    } finally {
+      setReloading(false);
+      setLoading(false);
+    }
+  }, [currentUser, toast]);
+
 
   useEffect(() => {
     if (!currentUser) return;
 
+    setLoading(true);
     const q = query(collection(firestore, "users"), where("uid", "!=", currentUser.uid));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const usersData: ChatUser[] = [];
@@ -43,6 +79,9 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
       });
       setUsers(usersData);
       setLoading(false);
+    }, (error) => {
+      console.error("Error on snapshot:", error);
+      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -55,6 +94,10 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
       return emailA.localeCompare(emailB);
     });
   }, [users]);
+  
+  const handleReload = () => {
+    fetchUsers();
+  };
 
   if (loading) {
     return (
@@ -75,6 +118,9 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
     <SidebarContent>
       <SidebarGroup>
         <SidebarGroupLabel>All Users</SidebarGroupLabel>
+        <SidebarGroupAction onClick={handleReload} disabled={reloading} tooltip="Refresh Users">
+            <RefreshCw className={cn(reloading && "animate-spin")} />
+        </SidebarGroupAction>
         <SidebarMenu>
           {sortedUsers.map((user) => (
             <SidebarMenuItem key={user.uid}>
