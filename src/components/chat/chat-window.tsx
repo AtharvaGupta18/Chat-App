@@ -209,7 +209,7 @@ export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
   return (
     <div className="flex h-full flex-col bg-background">
       <header className="flex items-center gap-4 border-b p-4 shadow-sm">
-        <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden">
+        <Button variant="ghost" size="icon" onClick={onBack}>
             <ArrowLeft />
         </Button>
         <Dialog>
