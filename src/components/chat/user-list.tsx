@@ -24,6 +24,8 @@ interface ChatData {
   id: string;
   unreadCount: { [key: string]: number };
   users: string[];
+  lastMessage: string;
+  lastMessageTimestamp: any;
 }
 
 export default function UserList({ onSelectUser, selectedUser }: UserListProps) {
@@ -81,15 +83,27 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
   };
 
   const filteredAndSortedUsers = useMemo(() => {
-    return users.filter(user => 
+    const filtered = users.filter(user => 
       user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.displayName?.toLowerCase().includes(searchQuery.toLowerCase())
-    ).sort((a, b) => {
+    );
+
+    return filtered.sort((a, b) => {
+      const chatA = getChatDataForUser(a.uid);
+      const chatB = getChatDataForUser(b.uid);
+      
+      const timeA = chatA?.lastMessageTimestamp?.toDate() || new Date(0);
+      const timeB = chatB?.lastMessageTimestamp?.toDate() || new Date(0);
+
+      if (timeB.getTime() !== timeA.getTime()) {
+        return timeB.getTime() - timeA.getTime();
+      }
+
       const nameA = a.displayName || a.email || '';
       const nameB = b.displayName || b.email || '';
       return nameA.localeCompare(nameB);
     });
-  }, [users, searchQuery]);
+  }, [users, searchQuery, chats]);
 
   const getUnreadCountForUser = (chat: ChatData | null) => {
     if (!currentUser || !chat) return 0;
@@ -151,7 +165,7 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
                         </div>
                         <div className="flex items-center justify-between w-full">
                             <span className="truncate text-sm text-muted-foreground pr-4">
-                                {user.email}
+                                {chatData?.lastMessage || "No messages yet"}
                             </span>
                             {unreadCount > 0 && (
                                 <Badge className="h-6 min-w-[1.5rem] text-sm flex-shrink-0">
