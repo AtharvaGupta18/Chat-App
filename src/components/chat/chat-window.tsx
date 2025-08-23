@@ -17,8 +17,10 @@ import {
   updateDoc,
   where,
   getDocs,
+  deleteDoc,
+  limit,
 } from "firebase/firestore";
-import { SendHorizonal, User as UserIcon, Check, CheckCheck, ArrowLeft } from "lucide-react";
+import { SendHorizonal, User as UserIcon, Check, CheckCheck, ArrowLeft, MoreHorizontal, FilePen, Trash, Loader2 } from "lucide-react";
 import { firestore } from "@/lib/firebase";
 import { useAuth } from "@/components/providers";
 import { Input } from "@/components/ui/input";
@@ -29,7 +31,11 @@ import type { ChatUser } from "./chat-layout";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { getInitials, generateAvatarColor } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "../ui/textarea";
 
 interface ChatWindowProps {
   recipient: ChatUser;
@@ -42,13 +48,18 @@ interface Message {
   senderId: string;
   createdAt: any;
   status: 'sent' | 'delivered' | 'read';
+  isEdited?: boolean;
 }
 
 export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
   const { user: currentUser, userDetails } = useAuth();
+  const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
   const viewportRef = useRef<HTMLDivElement>(null);
 
   const chatId =
@@ -176,6 +187,77 @@ export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
     }
   };
 
+  const handleEditMessage = (message: Message) => {
+    setEditingMessageId(message.id);
+    setEditingText(message.text);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMessageId(null);
+    setEditingText("");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!chatId || !editingMessageId || !editingText.trim()) return;
+    setIsSavingEdit(true);
+
+    try {
+        const messageRef = doc(firestore, "chats", chatId, "messages", editingMessageId);
+        await updateDoc(messageRef, {
+            text: editingText,
+            isEdited: true,
+        });
+
+        // If this was the last message, update the chat preview
+        const lastMessage = messages[messages.length -1];
+        if (lastMessage.id === editingMessageId) {
+            const chatRef = doc(firestore, "chats", chatId);
+            await updateDoc(chatRef, { lastMessage: editingText });
+        }
+
+        toast({ title: "Success", description: "Message updated successfully." });
+    } catch (error) {
+        console.error("Error updating message:", error);
+        toast({ variant: "destructive", title: "Error", description: "Failed to update message." });
+    } finally {
+        setEditingMessageId(null);
+        setEditingText("");
+        setIsSavingEdit(false);
+    }
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!chatId) return;
+
+    try {
+        await deleteDoc(doc(firestore, "chats", chatId, "messages", messageId));
+
+        const chatRef = doc(firestore, "chats", chatId);
+        const lastMessage = messages[messages.length - 1];
+
+        if (lastMessage.id === messageId) {
+            if (messages.length > 1) {
+                const newLastMessage = messages[messages.length - 2];
+                 await updateDoc(chatRef, { 
+                    lastMessage: newLastMessage.text,
+                    lastMessageTimestamp: newLastMessage.createdAt,
+                });
+            } else {
+                await updateDoc(chatRef, { 
+                    lastMessage: "Chat started",
+                    lastMessageTimestamp: serverTimestamp(),
+                });
+            }
+        }
+        
+        toast({ title: "Success", description: "Message deleted successfully." });
+    } catch (error) {
+        console.error("Error deleting message:", error);
+        toast({ variant: "destructive", title: "Error", description: "Failed to delete message." });
+    }
+  };
+
+
   const MessageStatus = ({ status }: { status: Message['status'] }) => {
     if (status === 'read') {
       return <CheckCheck className="h-4 w-4 text-blue-400" />;
@@ -255,32 +337,101 @@ export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
             <div
                 key={message.id}
                 className={cn(
-                "flex items-end gap-2",
+                "flex items-end gap-2 group",
                 message.senderId === currentUser?.uid ? "justify-end" : "justify-start"
                 )}
             >
                 {message.senderId !== currentUser?.uid && (
-                <Avatar className={cn('h-8 w-8 ring-2 ring-offset-2 ring-offset-background', recipientAvatarColors.ring)}>
-                    <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
-                    <AvatarFallback className={cn("text-white", recipientAvatarColors.bg)}>
-                        {getInitials(recipient.displayName || recipient.email || "")}
-                    </AvatarFallback>
-                </Avatar>
+                  <Avatar className={cn('h-8 w-8 ring-2 ring-offset-2 ring-offset-background', recipientAvatarColors.ring)}>
+                      <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
+                      <AvatarFallback className={cn("text-white", recipientAvatarColors.bg)}>
+                          {getInitials(recipient.displayName || recipient.email || "")}
+                      </AvatarFallback>
+                  </Avatar>
                 )}
-                <div
-                className={cn(
-                    "max-w-xs rounded-lg px-4 py-2 md:max-w-md lg:max-w-lg flex items-end gap-2",
-                    message.senderId === currentUser?.uid
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
+
+                {editingMessageId === message.id ? (
+                  <div className="w-full max-w-lg space-y-2">
+                    <Textarea
+                      value={editingText}
+                      onChange={(e) => setEditingText(e.target.value)}
+                      className="text-sm"
+                      autoFocus
+                      onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSaveEdit();
+                          }
+                          if (e.key === 'Escape') handleCancelEdit();
+                      }}
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button variant="ghost" size="sm" onClick={handleCancelEdit}>Cancel</Button>
+                      <Button size="sm" onClick={handleSaveEdit} disabled={isSavingEdit}>
+                        {isSavingEdit && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                  {message.senderId === currentUser?.uid && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <MoreHorizontal className="h-5 w-5"/>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={() => handleEditMessage(message)}>
+                          <FilePen className="mr-2 h-4 w-4" />
+                          <span>Edit</span>
+                        </DropdownMenuItem>
+                         <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                    <Trash className="mr-2 h-4 w-4" />
+                                    <span>Delete</span>
+                                </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete your message.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDeleteMessage(message.id)}>
+                                        Delete
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                  <div
+                    className={cn(
+                        "max-w-xs rounded-lg px-4 py-2 md:max-w-md lg:max-w-lg flex items-end gap-2",
+                        message.senderId === currentUser?.uid
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted"
+                    )}
+                  >
+                    <p className="text-sm break-words">{message.text}</p>
+                    <div className="flex-shrink-0 self-end flex items-center gap-1">
+                      {message.isEdited && <span className="text-xs text-primary-foreground/70">(edited)</span>}
+                      {message.senderId === currentUser?.uid && (
+                          <MessageStatus status={message.status} />
+                      )}
+                    </div>
+                  </div>
+                  </>
                 )}
-                >
-                  <p className="text-sm break-words">{message.text}</p>
-                   {message.senderId === currentUser?.uid && (
-                      <MessageStatus status={message.status} />
-                   )}
-                </div>
-                 {message.senderId === currentUser?.uid && userDetails && (
+
+                 {message.senderId === currentUser?.uid && userDetails && editingMessageId !== message.id && (
                   <Avatar className={cn('h-8 w-8 ring-2 ring-offset-2 ring-offset-background', currentUserAvatarColors.ring)}>
                      <AvatarImage src={userDetails?.photoURL || undefined} alt={userDetails?.displayName || ''}/>
                     <AvatarFallback className={cn("text-white", currentUserAvatarColors.bg)}>
@@ -300,8 +451,9 @@ export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type a message..."
             autoComplete="off"
+            disabled={editingMessageId !== null}
           />
-          <Button type="submit" size="icon" disabled={!newMessage.trim()}>
+          <Button type="submit" size="icon" disabled={!newMessage.trim() || editingMessageId !== null}>
             <SendHorizonal className="h-5 w-5" />
             <span className="sr-only">Send Message</span>
           </Button>
@@ -310,3 +462,5 @@ export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
     </div>
   );
 }
+
+    
