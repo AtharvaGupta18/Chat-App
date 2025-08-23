@@ -64,23 +64,25 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
         const messagesRef = collection(firestore, 'chats', chatId, 'messages');
         const q = query(
           messagesRef,
-          where('senderId', '==', recipient.uid),
-          where('status', '!=', 'read')
+          where('senderId', '==', recipient.uid)
         );
     
         try {
           const querySnapshot = await getDocs(q);
           const batch = writeBatch(firestore);
           querySnapshot.forEach((doc) => {
-            batch.update(doc.ref, { status: 'read' });
+            if (doc.data().status !== 'read') {
+              batch.update(doc.ref, { status: 'read' });
+            }
           });
           await batch.commit();
         } catch (error) {
-          console.error("Error marking messages as read, maybe the index is missing?", error);
+          console.error("Error marking messages as read", error);
         }
       };
 
     const resetUnreadCount = async () => {
+      if (!currentUser?.uid || !chatId) return;
       const chatDocRef = doc(firestore, "chats", chatId);
       const chatDoc = await getDoc(chatDocRef);
       if (chatDoc.exists()) {
@@ -301,3 +303,5 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
     </div>
   );
 }
+
+    
