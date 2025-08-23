@@ -35,12 +35,10 @@ export default function SidebarContent({ onSelectUser, selectedUser }: SidebarCo
         <WhisperLinkLogo className="h-8 w-8 text-primary" />
         <span className="text-lg font-semibold">WhisperLink</span>
       </header>
-      <div className="flex-1 p-4">
-        <div className="h-full w-full rounded-lg border bg-card text-card-foreground shadow-sm">
-            <ScrollArea className="h-full">
-                <UserList onSelectUser={onSelectUser} selectedUser={selectedUser} />
-            </ScrollArea>
-        </div>
+      <div className="flex-1">
+        <ScrollArea className="h-full">
+            <UserList onSelectUser={onSelectUser} selectedUser={selectedUser} />
+        </ScrollArea>
       </div>
       <footer className="p-4 border-t">
         <div className="flex w-full items-center justify-between">
