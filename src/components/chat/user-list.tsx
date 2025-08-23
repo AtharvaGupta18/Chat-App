@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, Fragment } from "react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { Search } from "lucide-react";
 import { firestore } from "@/lib/firebase";
@@ -113,34 +113,38 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
             />
         </div>
         <div className="space-y-2">
-          {filteredUsers.map((user) => {
+          {filteredUsers.map((user, index) => {
             const unreadCount = getUnreadCountForUser(user.uid);
             const userAvatarColors = generateAvatarColor(user.uid);
             return (
-            <Button
-                key={user.uid}
-                variant={selectedUser?.uid === user.uid ? "secondary" : "ghost"}
-                onClick={() => onSelectUser(user)}
-                className="w-full h-auto justify-start p-2 relative"
-              >
-                <div className="flex items-center gap-4">
-                    <Avatar className={cn("h-12 w-12 ring-2 ring-offset-2 ring-offset-background", userAvatarColors.ring)}>
-                    <AvatarImage src={user.photoURL || undefined} alt={user.displayName || ''} />
-                    <AvatarFallback className={cn("text-white text-xl", userAvatarColors.bg)}>
-                        {getInitials(user.displayName || user.email || "")}
-                    </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col items-start truncate">
-                    <span className="truncate font-medium">{user.displayName || user.email}</span>
-                    <span className="truncate text-sm text-muted-foreground">@{user.username}</span>
-                    </div>
-                </div>
-                {unreadCount > 0 && (
-                    <Badge className="absolute right-2 top-1/2 -translate-y-1/2 h-6 min-w-[1.5rem] text-sm">
-                        {unreadCount}
-                    </Badge>
+            <Fragment key={user.uid}>
+              <Button
+                  variant={selectedUser?.uid === user.uid ? "secondary" : "ghost"}
+                  onClick={() => onSelectUser(user)}
+                  className="w-full h-auto justify-start p-2 relative"
+                >
+                  <div className="flex items-center gap-4">
+                      <Avatar className={cn("h-12 w-12 ring-2 ring-offset-2 ring-offset-background", userAvatarColors.ring)}>
+                      <AvatarImage src={user.photoURL || undefined} alt={user.displayName || ''} />
+                      <AvatarFallback className={cn("text-white text-xl", userAvatarColors.bg)}>
+                          {getInitials(user.displayName || user.email || "")}
+                      </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col items-start truncate">
+                      <span className="truncate font-medium">{user.displayName || user.email}</span>
+                      <span className="truncate text-sm text-muted-foreground">@{user.username}</span>
+                      </div>
+                  </div>
+                  {unreadCount > 0 && (
+                      <Badge className="absolute right-2 top-1/2 -translate-y-1/2 h-6 min-w-[1.5rem] text-sm">
+                          {unreadCount}
+                      </Badge>
+                  )}
+                </Button>
+                {index < filteredUsers.length - 1 && (
+                  <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-border to-transparent" />
                 )}
-              </Button>
+            </Fragment>
           )})}
         </div>
       </div>
