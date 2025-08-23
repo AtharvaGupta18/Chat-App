@@ -14,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { cn, generateAvatarColor, getInitials } from "@/lib/utils";
 import { Skeleton } from "../ui/skeleton";
 import { Button } from "../ui/button";
-import { formatDistanceToNow } from 'date-fns';
 
 interface UserListProps {
   onSelectUser: (user: ChatUser) => void;
@@ -25,11 +24,6 @@ interface ChatData {
   id: string;
   unreadCount: { [key: string]: number };
   users: string[];
-  lastMessage?: string;
-  lastMessageTimestamp?: {
-    seconds: number;
-    nanoseconds: number;
-  };
 }
 
 export default function UserList({ onSelectUser, selectedUser }: UserListProps) {
@@ -64,8 +58,7 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
 
     const chatsQuery = query(
         collection(firestore, "chats"), 
-        where("users", "array-contains", currentUser.uid),
-        orderBy("lastMessageTimestamp", "desc")
+        where("users", "array-contains", currentUser.uid)
     );
     const chatsUnsubscribe = onSnapshot(chatsQuery, (snapshot) => {
         const chatsData = snapshot.docs.map(doc => ({
@@ -92,21 +85,11 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
       user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.displayName?.toLowerCase().includes(searchQuery.toLowerCase())
     ).sort((a, b) => {
-      const chatA = getChatDataForUser(a.uid);
-      const chatB = getChatDataForUser(b.uid);
-
-      const timeA = chatA?.lastMessageTimestamp?.seconds || 0;
-      const timeB = chatB?.lastMessageTimestamp?.seconds || 0;
-
-      if (timeA !== timeB) {
-        return timeB - timeA;
-      }
-      
       const nameA = a.displayName || a.email || '';
       const nameB = b.displayName || b.email || '';
       return nameA.localeCompare(nameB);
     });
-  }, [users, searchQuery, chats]);
+  }, [users, searchQuery]);
 
   const getUnreadCountForUser = (chat: ChatData | null) => {
     if (!currentUser || !chat) return 0;
@@ -147,8 +130,6 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
             const chatData = getChatDataForUser(user.uid);
             const unreadCount = getUnreadCountForUser(chatData);
             const userAvatarColors = generateAvatarColor(user.uid);
-            const lastMessageTimestamp = chatData?.lastMessageTimestamp;
-            const timeAgo = lastMessageTimestamp ? formatDistanceToNow(new Date(lastMessageTimestamp.seconds * 1000), { addSuffix: true }) : '';
 
             return (
             <Fragment key={user.uid}>
@@ -167,11 +148,10 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
                       <div className="flex flex-col items-start truncate flex-1">
                         <div className="flex justify-between w-full">
                             <span className="truncate font-medium">{user.displayName || user.email}</span>
-                            {timeAgo && <span className="text-xs text-muted-foreground ml-2 flex-shrink-0">{timeAgo}</span>}
                         </div>
                         <div className="flex items-center justify-between w-full">
                             <span className="truncate text-sm text-muted-foreground pr-4">
-                                {chatData?.lastMessage || `Start a conversation with @${user.username}`}
+                                @{user.username}
                             </span>
                             {unreadCount > 0 && (
                                 <Badge className="h-6 min-w-[1.5rem] text-sm flex-shrink-0">
@@ -191,4 +171,3 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
       </div>
   );
 }
-
