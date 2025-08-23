@@ -142,7 +142,7 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
                   )}
                 </Button>
                 {index < filteredUsers.length - 1 && (
-                  <div className="h-[1px] w-full bg-gradient-to-r from-border/0 via-border/50 to-border/0" />
+                  <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-muted/20 to-transparent" />
                 )}
             </Fragment>
           )})}
