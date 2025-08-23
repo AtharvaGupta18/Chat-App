@@ -23,7 +23,7 @@ export default function Home() {
     );
   }
 
-  if (!user || user.isAnonymous) {
+  if (!user) {
     return <AuthLayout />;
   }
 
