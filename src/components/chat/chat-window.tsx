@@ -36,6 +36,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { getInitials, generateAvatarColor } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "../ui/textarea";
+import { motion, useAnimation } from "framer-motion";
 
 interface ChatWindowProps {
   recipient: ChatUser;
@@ -283,20 +284,8 @@ export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
         toast({ variant: "destructive", title: "Error", description: "Failed to delete message." });
     }
   };
-
-
-  const MessageStatus = ({ status }: { status: Message['status'] }) => {
-    if (status === 'read') {
-      return <CheckCheck className="h-4 w-4 text-blue-400" />;
-    }
-    if (status === 'delivered') {
-      return <CheckCheck className="h-4 w-4 text-primary-foreground/70" />;
-    }
-    return <Check className="h-4 w-4 text-primary-foreground/70" />;
-  };
   
   const recipientAvatarColors = recipient ? generateAvatarColor(recipient.uid) : {};
-  const currentUserAvatarColors = userDetails ? generateAvatarColor(userDetails.uid) : {};
 
   if (loading) {
     return (
@@ -359,135 +348,23 @@ export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
       </header>
      
       <ScrollArea className="flex-1" viewportRef={viewportRef}>
-        <div className="p-4 space-y-4">
+        <div className="p-4 space-y-2">
             {messages.map((message) => (
-            <div
+              <ChatMessage
                 key={message.id}
-                className={cn(
-                "flex items-end gap-2 group",
-                message.senderId === currentUser?.uid ? "justify-end" : "justify-start"
-                )}
-            >
-                {message.senderId !== currentUser?.uid && (
-                  <Avatar className={cn('h-8 w-8 ring-2 ring-offset-2 ring-offset-background', recipientAvatarColors.ring)}>
-                      <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
-                      <AvatarFallback className={cn("text-white", recipientAvatarColors.bg)}>
-                          {getInitials(recipient.displayName || recipient.email || "")}
-                      </AvatarFallback>
-                  </Avatar>
-                )}
-
-                {editingMessageId === message.id ? (
-                  <div className="w-full max-w-lg space-y-2">
-                    <Textarea
-                      value={editingText}
-                      onChange={(e) => setEditingText(e.target.value)}
-                      className="text-sm"
-                      autoFocus
-                      onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                              e.preventDefault();
-                              handleSaveEdit();
-                          }
-                          if (e.key === 'Escape') handleCancelEdit();
-                      }}
-                    />
-                    <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={handleCancelEdit}>Cancel</Button>
-                      <Button size="sm" onClick={handleSaveEdit} disabled={isSavingEdit}>
-                        {isSavingEdit && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                  <div className="flex items-center gap-2">
-                    {message.senderId === currentUser?.uid && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <MoreHorizontal className="h-5 w-5"/>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuItem onClick={() => handleReplyToMessage(message)}>
-                            <Reply className="mr-2 h-4 w-4" />
-                            <span>Reply</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditMessage(message)}>
-                            <FilePen className="mr-2 h-4 w-4" />
-                            <span>Edit</span>
-                          </DropdownMenuItem>
-                          <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                      <Trash className="mr-2 h-4 w-4" />
-                                      <span>Delete</span>
-                                  </DropdownMenuItem>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                          This action cannot be undone. This will permanently delete your message.
-                                      </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => handleDeleteMessage(message.id)}>
-                                          Delete
-                                      </AlertDialogAction>
-                                  </AlertDialogFooter>
-                              </AlertDialogContent>
-                          </AlertDialog>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
-                    
-                    {message.senderId !== currentUser?.uid && (
-                       <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleReplyToMessage(message)}>
-                          <Reply className="h-5 w-5"/>
-                        </Button>
-                    )}
-                    
-                    <div
-                        className={cn(
-                            "rounded-lg px-4 py-2 flex flex-col",
-                            message.senderId === currentUser?.uid
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted"
-                        )}
-                    >
-                      {message.replyTo && (
-                        <div className="border-l-2 border-primary-foreground/50 pl-2 mb-2 text-xs text-primary-foreground/80 bg-black/10 p-2 rounded-md">
-                          <p className="font-semibold">{message.replyTo.senderId === currentUser?.uid ? "You" : message.replyTo.senderName}</p>
-                          <p className="truncate">{message.replyTo.text}</p>
-                        </div>
-                      )}
-                      <div className="flex items-end gap-2 max-w-sm md:max-w-md lg:max-w-lg">
-                        <p className="text-sm break-words">{message.text}</p>
-                        <div className="flex-shrink-0 self-end flex items-center gap-1">
-                          {message.isEdited && <span className="text-xs text-primary-foreground/70">(edited)</span>}
-                          {message.senderId === currentUser?.uid && (
-                              <MessageStatus status={message.status} />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  </>
-                )}
-
-                 {message.senderId === currentUser?.uid && userDetails && editingMessageId !== message.id && (
-                  <Avatar className={cn('h-8 w-8 ring-2 ring-offset-2 ring-offset-background', currentUserAvatarColors.ring)}>
-                     <AvatarImage src={userDetails?.photoURL || undefined} alt={userDetails?.displayName || ''}/>
-                    <AvatarFallback className={cn("text-white", currentUserAvatarColors.bg)}>
-                      {getInitials(userDetails?.displayName || userDetails?.email || "")}
-                    </AvatarFallback>
-                  </Avatar>
-                )}
-            </div>
+                message={message}
+                isCurrentUser={message.senderId === currentUser?.uid}
+                recipient={recipient}
+                onReply={handleReplyToMessage}
+                onEdit={handleEditMessage}
+                onDelete={handleDeleteMessage}
+                onCancelEdit={handleCancelEdit}
+                onSaveEdit={handleSaveEdit}
+                editingMessageId={editingMessageId}
+                editingText={editingText}
+                setEditingText={setEditingText}
+                isSavingEdit={isSavingEdit}
+              />
             ))}
         </div>
       </ScrollArea>
@@ -518,6 +395,211 @@ export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
           </Button>
         </form>
       </footer>
+    </div>
+  );
+}
+
+interface ChatMessageProps {
+  message: Message;
+  isCurrentUser: boolean;
+  recipient: ChatUser;
+  onReply: (message: Message) => void;
+  onEdit: (message: Message) => void;
+  onDelete: (messageId: string) => void;
+  onCancelEdit: () => void;
+  onSaveEdit: () => void;
+  editingMessageId: string | null;
+  editingText: string;
+  setEditingText: (text: string) => void;
+  isSavingEdit: boolean;
+}
+
+function ChatMessage({
+  message,
+  isCurrentUser,
+  recipient,
+  onReply,
+  onEdit,
+  onDelete,
+  onCancelEdit,
+  onSaveEdit,
+  editingMessageId,
+  editingText,
+  setEditingText,
+  isSavingEdit
+}: ChatMessageProps) {
+  const { user: currentUser, userDetails } = useAuth();
+  const controls = useAnimation();
+  const dragRef = useRef<HTMLDivElement>(null);
+
+  const recipientAvatarColors = generateAvatarColor(recipient.uid);
+  const currentUserAvatarColors = userDetails ? generateAvatarColor(userDetails.uid) : {};
+
+  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: any) => {
+    const dragThreshold = 50;
+    if (info.offset.x > dragThreshold) {
+      onReply(message);
+    }
+    controls.start({ x: 0 });
+  };
+
+  const MessageStatus = ({ status }: { status: Message['status'] }) => {
+    if (status === 'read') {
+      return <CheckCheck className="h-4 w-4 text-blue-400" />;
+    }
+    if (status === 'delivered') {
+      return <CheckCheck className="h-4 w-4 text-primary-foreground/70" />;
+    }
+    return <Check className="h-4 w-4 text-primary-foreground/70" />;
+  };
+
+  return (
+    <div
+      className={cn(
+        "flex items-end gap-2 group relative",
+        isCurrentUser ? "justify-end" : "justify-start"
+      )}
+    >
+       <div className={cn("absolute flex items-center h-full -z-10", isCurrentUser ? "right-full mr-2" : "left-full ml-2" )}>
+            <Reply className="h-5 w-5 text-muted-foreground" />
+       </div>
+
+      <motion.div
+        ref={dragRef}
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        onDragEnd={handleDragEnd}
+        animate={controls}
+        dragElastic={{ right: 0.1, left: 0 }}
+        className={cn(
+            "flex items-end gap-2 w-full",
+            isCurrentUser ? "justify-end" : "justify-start"
+        )}
+        style={{
+            x: 0,
+            ...(isCurrentUser ? { paddingRight: "0" } : { paddingLeft: "0" }),
+        }}
+      >
+        {!isCurrentUser && (
+          <Avatar className={cn('h-8 w-8 ring-2 ring-offset-2 ring-offset-background', recipientAvatarColors.ring)}>
+            <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''} />
+            <AvatarFallback className={cn("text-white", recipientAvatarColors.bg)}>
+              {getInitials(recipient.displayName || recipient.email || "")}
+            </AvatarFallback>
+          </Avatar>
+        )}
+
+        {editingMessageId === message.id ? (
+          <div className="w-full max-w-lg space-y-2">
+            <Textarea
+              value={editingText}
+              onChange={(e) => setEditingText(e.target.value)}
+              className="text-sm"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  onSaveEdit();
+                }
+                if (e.key === 'Escape') onCancelEdit();
+              }}
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" size="sm" onClick={onCancelEdit}>Cancel</Button>
+              <Button size="sm" onClick={onSaveEdit} disabled={isSavingEdit}>
+                {isSavingEdit && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-2">
+              {isCurrentUser && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <MoreHorizontal className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => onReply(message)}>
+                      <Reply className="mr-2 h-4 w-4" />
+                      <span>Reply</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onEdit(message)}>
+                      <FilePen className="mr-2 h-4 w-4" />
+                      <span>Edit</span>
+                    </DropdownMenuItem>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                          <Trash className="mr-2 h-4 w-4" />
+                          <span>Delete</span>
+                        </DropdownMenuItem>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete your message.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => onDelete(message.id)}>
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+
+              {!isCurrentUser && (
+                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => onReply(message)}>
+                  <Reply className="h-5 w-5" />
+                </Button>
+              )}
+
+              <div
+                className={cn(
+                  "rounded-lg px-4 py-2 flex flex-col",
+                  isCurrentUser
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted"
+                )}
+              >
+                {message.replyTo && (
+                  <div className="border-l-2 border-primary-foreground/50 pl-2 mb-2 text-xs text-primary-foreground/80 bg-black/10 p-2 rounded-md">
+                    <p className="font-semibold">{message.replyTo.senderId === currentUser?.uid ? "You" : message.replyTo.senderName}</p>
+                    <p className="truncate">{message.replyTo.text}</p>
+                  </div>
+                )}
+                <div className="flex items-end gap-2 max-w-sm md:max-w-md lg:max-w-lg">
+                  <p className="text-sm break-words whitespace-pre-wrap">{message.text}</p>
+                  <div className="flex-shrink-0 self-end flex items-center gap-1">
+                    {message.isEdited && <span className="text-xs text-primary-foreground/70">(edited)</span>}
+                    {isCurrentUser && (
+                      <MessageStatus status={message.status} />
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {isCurrentUser && userDetails && editingMessageId !== message.id && (
+          <Avatar className={cn('h-8 w-8 ring-2 ring-offset-2 ring-offset-background', currentUserAvatarColors.ring)}>
+            <AvatarImage src={userDetails?.photoURL || undefined} alt={userDetails?.displayName || ''} />
+            <AvatarFallback className={cn("text-white", currentUserAvatarColors.bg)}>
+              {getInitials(userDetails?.displayName || userDetails?.email || "")}
+            </AvatarFallback>
+          </Avatar>
+        )}
+      </motion.div>
     </div>
   );
 }
