@@ -126,7 +126,7 @@ export default function ProfileDialog() {
         <div className="space-y-4">
           <div className="flex justify-center">
             <div className="relative">
-              <Avatar className="h-24 w-24">
+              <Avatar className="h-24 w-24 ring-2 ring-offset-2 ring-primary ring-offset-background">
                 <AvatarImage src={profilePicPreview || undefined} alt="Profile Picture"/>
                 <AvatarFallback className={cn("text-4xl text-white", generateAvatarColor(user.uid))}>
                   {getInitials(name || userDetails?.email || "")}
