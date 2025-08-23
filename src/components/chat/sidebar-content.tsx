@@ -1,3 +1,4 @@
+
 "use client";
 
 import { LogOut, User as UserIcon } from "lucide-react";
@@ -17,7 +18,8 @@ import {
 import { WhisperLinkLogo } from "../icons";
 import UserList from "./user-list";
 import type { ChatUser } from "./chat-layout";
-import { Avatar, AvatarFallback } from "../ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import ProfileDialog from "../profile/profile-dialog";
 
 interface SidebarContentProps {
   onSelectUser: (user: ChatUser) => void;
@@ -25,7 +27,7 @@ interface SidebarContentProps {
 }
 
 export default function SidebarContent({ onSelectUser, selectedUser }: SidebarContentProps) {
-  const { user } = useAuth();
+  const { user, userDetails } = useAuth();
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -47,26 +49,30 @@ export default function SidebarContent({ onSelectUser, selectedUser }: SidebarCo
             <div className="flex w-full items-center justify-between">
               <div className="flex items-center gap-2 overflow-hidden">
                 <Avatar className="h-8 w-8">
+                  <AvatarImage src={userDetails?.photoURL || undefined} alt={userDetails?.displayName || ''} />
                   <AvatarFallback>
                     <UserIcon />
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col truncate">
-                  <span className="text-sm font-medium">You</span>
+                  <span className="text-sm font-medium">{userDetails?.displayName || 'You'}</span>
                   <span className="text-xs text-muted-foreground truncate">
                     {user?.email}
                   </span>
                 </div>
               </div>
-              <SidebarMenuButton
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 flex-shrink-0"
-                onClick={handleLogout}
-                tooltip="Logout"
-              >
-                <LogOut />
-              </SidebarMenuButton>
+              <div className="flex items-center">
+                 <ProfileDialog />
+                <SidebarMenuButton
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 flex-shrink-0"
+                  onClick={handleLogout}
+                  tooltip="Logout"
+                >
+                  <LogOut />
+                </SidebarMenuButton>
+              </div>
             </div>
           </SidebarMenuItem>
         </SidebarMenu>

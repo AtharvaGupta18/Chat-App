@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -17,7 +18,7 @@ import { firestore } from "@/lib/firebase";
 import { useAuth } from "@/components/providers";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ChatUser } from "./chat-layout";
 import { cn } from "@/lib/utils";
@@ -35,7 +36,7 @@ interface Message {
 }
 
 export default function ChatWindow({ recipient }: ChatWindowProps) {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, userDetails } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -138,12 +139,13 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
     <div className="flex h-full flex-col bg-background">
       <header className="flex items-center gap-4 border-b p-4 shadow-sm">
         <Avatar>
+          <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
           <AvatarFallback>
             <UserIcon />
           </AvatarFallback>
         </Avatar>
         <div>
-          <h2 className="font-semibold">{recipient.email}</h2>
+          <h2 className="font-semibold">{recipient.displayName || recipient.email}</h2>
         </div>
       </header>
 
@@ -159,8 +161,9 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
             >
                 {message.senderId !== currentUser?.uid && (
                 <Avatar className="h-8 w-8">
+                    <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
                     <AvatarFallback>
-                    <UserIcon className="h-4 w-4" />
+                        <UserIcon className="h-4 w-4" />
                     </AvatarFallback>
                 </Avatar>
                 )}
@@ -174,6 +177,14 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
                 >
                 <p className="text-sm">{message.text}</p>
                 </div>
+                 {message.senderId === currentUser?.uid && (
+                  <Avatar className="h-8 w-8">
+                     <AvatarImage src={userDetails?.photoURL || undefined} alt={userDetails?.displayName || ''}/>
+                    <AvatarFallback>
+                      <UserIcon className="h-4 w-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                )}
             </div>
             ))}
         </div>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -14,6 +15,9 @@ import { WhisperLinkLogo } from "../icons";
 export interface ChatUser {
   uid: string;
   email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  bio: string | null;
 }
 
 export default function ChatLayout() {

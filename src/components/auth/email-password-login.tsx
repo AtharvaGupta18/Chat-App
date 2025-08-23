@@ -8,7 +8,7 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
-import { Loader2, KeyRound, Mail } from "lucide-react";
+import { Loader2, KeyRound, Mail, User as UserIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/card";
 
 export default function EmailPasswordLogin() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLogin, setIsLogin] = useState(true);
@@ -57,14 +58,15 @@ export default function EmailPasswordLogin() {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const newUser = userCredential.user;
         
-        // Set a display name for the new user, which can be their email.
-        await updateProfile(newUser, { displayName: newUser.email });
+        await updateProfile(newUser, { displayName: name });
 
         await setDoc(doc(firestore, "users", newUser.uid), {
             uid: newUser.uid,
             email: newUser.email,
-            displayName: newUser.email,
+            displayName: name,
             createdAt: serverTimestamp(),
+            bio: "",
+            photoURL: "",
         });
         
         toast({
@@ -94,11 +96,25 @@ export default function EmailPasswordLogin() {
         <CardDescription>
           {isLogin
             ? "Sign in to your account to continue."
-            : "Enter your email and password to sign up."}
+            : "Enter your details to sign up."}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleAuthAction} className="space-y-4">
+         {!isLogin && (
+            <div className="relative">
+              <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Full Name"
+                disabled={loading}
+                required
+                className="pl-10"
+              />
+            </div>
+          )}
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input

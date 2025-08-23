@@ -19,6 +19,7 @@ import { useAuth } from "@/components/providers";
 import type { ChatUser } from "./chat-layout";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface UserListProps {
   onSelectUser: (user: ChatUser) => void;
@@ -40,13 +41,7 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
       const querySnapshot = await getDocs(q);
       const usersData: ChatUser[] = [];
       querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        if (data.email) {
-          usersData.push({
-            uid: data.uid,
-            email: data.email,
-          });
-        }
+        usersData.push(doc.data() as ChatUser);
       });
       setUsers(usersData);
     } catch (error) {
@@ -70,13 +65,7 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const usersData: ChatUser[] = [];
       querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        if(data.email) { // only show users with emails
-             usersData.push({
-                uid: data.uid,
-                email: data.email,
-            });
-        }
+        usersData.push(doc.data() as ChatUser);
       });
       setUsers(usersData);
       setLoading(false);
@@ -91,13 +80,13 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
     });
 
     return () => unsubscribe();
-  }, [currentUser, toast]);
+  }, [currentUser]);
 
   const sortedUsers = useMemo(() => {
     return [...users].sort((a, b) => {
-      const emailA = a.email || '';
-      const emailB = b.email || '';
-      return emailA.localeCompare(emailB);
+      const nameA = a.displayName || a.email || '';
+      const nameB = b.displayName || b.email || '';
+      return nameA.localeCompare(nameB);
     });
   }, [users]);
   
@@ -134,10 +123,15 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
                 onClick={() => onSelectUser(user)}
                 isActive={selectedUser?.uid === user.uid}
                 className="w-full justify-start"
-                tooltip={user.email || 'Unknown user'}
+                tooltip={user.displayName || user.email || 'Unknown user'}
               >
-                <User />
-                <span className="truncate">{user.email}</span>
+                <Avatar className="h-6 w-6">
+                  <AvatarImage src={user.photoURL || undefined} alt={user.displayName || ''} />
+                  <AvatarFallback>
+                    <User />
+                  </AvatarFallback>
+                </Avatar>
+                <span className="truncate">{user.displayName || user.email}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
