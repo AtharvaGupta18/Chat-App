@@ -456,7 +456,7 @@ function ChatMessage({
   return (
     <div
       className={cn(
-        "flex items-end gap-2 group relative",
+        "flex items-end gap-1 group relative",
         isCurrentUser ? "justify-end" : "justify-start"
       )}
     >
@@ -472,7 +472,7 @@ function ChatMessage({
         animate={controls}
         dragElastic={{ right: 0.1, left: 0 }}
         className={cn(
-            "flex items-end gap-2 w-full",
+            "flex items-end gap-1 w-full",
             isCurrentUser ? "justify-end" : "justify-start"
         )}
         style={{
