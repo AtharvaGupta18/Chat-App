@@ -6,6 +6,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import { doc, serverTimestamp, setDoc, getDocs, query, where, collection } from "firebase/firestore";
 import { Loader2, KeyRound, Mail, User as UserIcon, AtSign } from "lucide-react";
@@ -30,6 +31,34 @@ export default function EmailPasswordLogin() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  const handlePasswordReset = async () => {
+    if (!email) {
+      toast({
+        variant: "destructive",
+        title: "Email Required",
+        description: "Please enter your email address to reset your password.",
+      });
+      return;
+    }
+    setLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast({
+        title: "Password Reset Email Sent",
+        description: "Check your inbox for a link to reset your password.",
+      });
+    } catch (error: any) {
+      console.error("Error sending password reset email:", error);
+      toast({
+        variant: "destructive",
+        title: "Password Reset Failed",
+        description: error.message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -181,6 +210,13 @@ export default function EmailPasswordLogin() {
             {isLogin ? "Sign Up" : "Sign In"}
           </Button>
         </div>
+        {isLogin && (
+            <div className="mt-2 text-center text-sm">
+                <Button variant="link" className="p-0 h-auto" onClick={handlePasswordReset}>
+                    Forgot Password?
+                </Button>
+            </div>
+        )}
       </CardContent>
     </Card>
   );
