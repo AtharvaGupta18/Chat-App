@@ -23,6 +23,7 @@ import { doc, updateDoc, getDocs, collection, query, where } from "firebase/fire
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { firestore, storage, auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
+import { getInitials } from "@/lib/utils";
 
 export default function ProfileDialog() {
   const { user, userDetails } = useAuth();
@@ -151,7 +152,7 @@ export default function ProfileDialog() {
               <Avatar className="h-24 w-24 cursor-pointer" onClick={handleAvatarClick}>
                 <AvatarImage src={profilePicPreview || undefined} alt="Profile Picture"/>
                 <AvatarFallback className="text-4xl">
-                  {name?.charAt(0).toUpperCase()}
+                  {getInitials(name || userDetails?.email || "")}
                 </AvatarFallback>
               </Avatar>
               <div className="absolute bottom-0 right-0 rounded-full bg-primary p-1.5" onClick={handleAvatarClick}>

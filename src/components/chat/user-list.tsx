@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "../ui/input";
 import { Badge } from "@/components/ui/badge";
+import { getInitials } from "@/lib/utils";
 
 interface UserListProps {
   onSelectUser: (user: ChatUser) => void;
@@ -138,7 +139,7 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
                 <Avatar className="h-6 w-6">
                   <AvatarImage src={user.photoURL || undefined} alt={user.displayName || ''} />
                   <AvatarFallback>
-                    <User />
+                    {getInitials(user.displayName || user.email || "")}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col truncate">

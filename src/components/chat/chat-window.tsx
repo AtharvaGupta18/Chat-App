@@ -29,6 +29,7 @@ import type { ChatUser } from "./chat-layout";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { getInitials } from "@/lib/utils";
 
 interface ChatWindowProps {
   recipient: ChatUser;
@@ -64,9 +65,9 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
       
       const querySnapshot = await getDocs(q);
       const batch = writeBatch(firestore);
-      querySnapshot.forEach((doc) => {
-        if (doc.data().status !== 'read') {
-          batch.update(doc.ref, { status: "read" });
+      querySnapshot.forEach((messageDoc) => {
+        if (messageDoc.data().status !== 'read') {
+          batch.update(messageDoc.ref, { status: "read" });
         }
       });
       await batch.commit();
@@ -201,7 +202,7 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
             <Avatar>
               <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
               <AvatarFallback>
-                <UserIcon />
+                {getInitials(recipient.displayName || recipient.email || "")}
               </AvatarFallback>
             </Avatar>
             <div>
@@ -215,7 +216,7 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
                     <Avatar className="h-24 w-24">
                         <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
                         <AvatarFallback className="text-4xl">
-                            {recipient.displayName?.charAt(0).toUpperCase() || <UserIcon />}
+                           {getInitials(recipient.displayName || recipient.email || "")}
                         </AvatarFallback>
                     </Avatar>
                     <div>
@@ -246,7 +247,7 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
                 <Avatar className="h-8 w-8">
                     <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
                     <AvatarFallback>
-                        <UserIcon className="h-4 w-4" />
+                        {getInitials(recipient.displayName || recipient.email || "")}
                     </AvatarFallback>
                 </Avatar>
                 )}
@@ -267,7 +268,7 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
                   <Avatar className="h-8 w-8">
                      <AvatarImage src={userDetails?.photoURL || undefined} alt={userDetails?.displayName || ''}/>
                     <AvatarFallback>
-                      <UserIcon className="h-4 w-4" />
+                      {getInitials(userDetails?.displayName || userDetails?.email || "")}
                     </AvatarFallback>
                   </Avatar>
                 )}

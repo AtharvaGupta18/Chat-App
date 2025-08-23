@@ -20,6 +20,7 @@ import UserList from "./user-list";
 import type { ChatUser } from "./chat-layout";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import ProfileDialog from "../profile/profile-dialog";
+import { getInitials } from "@/lib/utils";
 
 interface SidebarContentProps {
   onSelectUser: (user: ChatUser) => void;
@@ -51,7 +52,7 @@ export default function SidebarContent({ onSelectUser, selectedUser }: SidebarCo
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={userDetails?.photoURL || undefined} alt={userDetails?.displayName || ''} />
                   <AvatarFallback>
-                    <UserIcon />
+                    {getInitials(userDetails?.displayName || userDetails?.email || "")}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col truncate">
