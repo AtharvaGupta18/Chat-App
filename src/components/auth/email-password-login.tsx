@@ -4,10 +4,8 @@ import { useState } from "react";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  linkWithCredential,
-  EmailAuthProvider,
 } from "firebase/auth";
-import { doc, serverTimestamp, setDoc, getDoc, collection } from "firebase/firestore";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { Loader2, KeyRound, Mail } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -21,7 +19,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useAuth } from "../providers";
 
 export default function EmailPasswordLogin() {
   const [email, setEmail] = useState("");
@@ -29,7 +26,6 @@ export default function EmailPasswordLogin() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { user: currentUser } = useAuth();
 
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault();
