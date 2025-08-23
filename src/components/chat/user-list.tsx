@@ -79,9 +79,7 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
         }
       });
       setUsers(usersData);
-      if (loading) {
-        setLoading(false);
-      }
+      setLoading(false);
     }, (error) => {
       console.error("Error on snapshot:", error);
       toast({
@@ -93,7 +91,7 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
     });
 
     return () => unsubscribe();
-  }, [currentUser, loading, toast]);
+  }, [currentUser, toast]);
 
   const sortedUsers = useMemo(() => {
     return [...users].sort((a, b) => {
@@ -107,7 +105,7 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
     fetchUsers();
   };
 
-  if (loading && users.length === 0) {
+  if (loading) {
     return (
       <SidebarContent>
         <SidebarGroup>
