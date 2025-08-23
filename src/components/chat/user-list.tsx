@@ -151,7 +151,7 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
                         </div>
                         <div className="flex items-center justify-between w-full">
                             <span className="truncate text-sm text-muted-foreground pr-4">
-                                @{user.username}
+                                {user.email}
                             </span>
                             {unreadCount > 0 && (
                                 <Badge className="h-6 min-w-[1.5rem] text-sm flex-shrink-0">
