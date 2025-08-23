@@ -58,28 +58,6 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
   useEffect(() => {
     if (!chatId || !currentUser) return;
 
-    const markMessagesAsRead = async () => {
-        if (!chatId || !recipient || !currentUser) return;
-    
-        const messagesRef = collection(firestore, 'chats', chatId, 'messages');
-        const q = query(
-          messagesRef,
-          where('senderId', '==', recipient.uid),
-          where('status', '!=', 'read')
-        );
-    
-        try {
-          const querySnapshot = await getDocs(q);
-          const batch = writeBatch(firestore);
-          querySnapshot.forEach((doc) => {
-            batch.update(doc.ref, { status: 'read' });
-          });
-          await batch.commit();
-        } catch (error) {
-          console.error("Error marking messages as read", error);
-        }
-      };
-
     const resetUnreadCount = async () => {
       if (!currentUser?.uid || !chatId) return;
       const chatDocRef = doc(firestore, "chats", chatId);
@@ -92,7 +70,6 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
     };
     
     resetUnreadCount();
-    markMessagesAsRead();
 
     setLoading(true);
     const messagesQuery = query(
@@ -100,15 +77,34 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
       orderBy("createdAt", "asc")
     );
 
-    const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
+    const unsubscribe = onSnapshot(messagesQuery, async (snapshot) => {
       const newMessages: Message[] = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       } as Message));
       setMessages(newMessages);
       setLoading(false);
-       resetUnreadCount();
-       markMessagesAsRead();
+
+      // Mark incoming messages as read
+      const batch = writeBatch(firestore);
+      let hasUnreadMessages = false;
+      snapshot.docs.forEach(doc => {
+          const message = doc.data() as Message;
+          if (message.senderId === recipient.uid && message.status !== 'read') {
+              batch.update(doc.ref, { status: 'read' });
+              hasUnreadMessages = true;
+          }
+      });
+
+      if (hasUnreadMessages) {
+          try {
+              await batch.commit();
+          } catch (error) {
+              console.error("Error marking messages as read", error);
+          }
+      }
+       
+      resetUnreadCount();
     }, (error) => {
         console.error("Error fetching messages:", error);
         setLoading(false);
