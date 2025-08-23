@@ -58,13 +58,11 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
 
     const markMessagesAsRead = async () => {
         const messagesRef = collection(firestore, "chats", chatId, "messages");
-        const q = query(messagesRef, where("senderId", "==", recipient.uid));
+        const q = query(messagesRef, where("senderId", "==", recipient.uid), where("status", "!=", "read"));
         const querySnapshot = await getDocs(q);
         const batch = writeBatch(firestore);
         querySnapshot.forEach(doc => {
-            if (doc.data().status !== 'read') {
-                batch.update(doc.ref, { status: "read" });
-            }
+            batch.update(doc.ref, { status: "read" });
         });
         await batch.commit();
     };
@@ -166,7 +164,7 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
 
   const MessageStatus = ({ status }: { status: Message['status'] }) => {
     if (status === 'read') {
-      return <CheckCheck className="h-4 w-4 text-blue-500" />;
+      return <CheckCheck className="h-4 w-4 text-blue-400" />;
     }
     if (status === 'delivered') {
       return <CheckCheck className="h-4 w-4 text-primary-foreground/70" />;
