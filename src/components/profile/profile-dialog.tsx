@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/components/providers";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,11 +17,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, Edit, Loader2 } from "lucide-react";
+import { Edit, Loader2 } from "lucide-react";
 import { updateProfile } from "firebase/auth";
 import { doc, updateDoc, getDocs, collection, query, where } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { firestore, storage, auth } from "@/lib/firebase";
+import { firestore, auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { cn, generateAvatarColor, getInitials } from "@/lib/utils";
 
@@ -32,10 +31,8 @@ export default function ProfileDialog() {
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
-  const [profilePic, setProfilePic] = useState<File | null>(null);
   const [profilePicPreview, setProfilePicPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (userDetails) {
@@ -45,14 +42,6 @@ export default function ProfileDialog() {
       setProfilePicPreview(userDetails.photoURL || null);
     }
   }, [userDetails, open]);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setProfilePic(file);
-      setProfilePicPreview(URL.createObjectURL(file));
-    }
-  };
 
   const handleSaveChanges = async () => {
     if (!user || !userDetails) return;
@@ -81,16 +70,6 @@ export default function ProfileDialog() {
             return;
         }
         dataToUpdate.username = username;
-      }
-
-      if (profilePic) {
-        const storageRef = ref(storage, `profile_pictures/${user.uid}`);
-        await uploadBytes(storageRef, profilePic);
-        const photoURL = await getDownloadURL(storageRef);
-        if (photoURL !== userDetails.photoURL) {
-            dataToUpdate.photoURL = photoURL;
-            authProfileToUpdate.photoURL = photoURL;
-        }
       }
       
       if (name !== userDetails.displayName) {
@@ -131,10 +110,6 @@ export default function ProfileDialog() {
     }
   };
   
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
-  };
-
   if (!user || !userDetails) return null;
 
   return (
@@ -151,22 +126,12 @@ export default function ProfileDialog() {
         <div className="space-y-4">
           <div className="flex justify-center">
             <div className="relative">
-              <Avatar className="h-24 w-24 cursor-pointer" onClick={handleAvatarClick}>
+              <Avatar className="h-24 w-24">
                 <AvatarImage src={profilePicPreview || undefined} alt="Profile Picture"/>
                 <AvatarFallback className={cn("text-4xl text-white", generateAvatarColor(user.uid))}>
                   {getInitials(name || userDetails?.email || "")}
                 </AvatarFallback>
               </Avatar>
-              <div className="absolute bottom-0 right-0 rounded-full bg-primary p-1.5" onClick={handleAvatarClick}>
-                <Camera className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className="hidden"
-                accept="image/*"
-              />
             </div>
           </div>
           <div className="space-y-2">
