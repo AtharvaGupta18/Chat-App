@@ -54,7 +54,7 @@ export default function SidebarContent({ onSelectUser, selectedUser }: SidebarCo
                 <div className="flex flex-col truncate">
                   <span className="text-sm font-medium">You</span>
                   <span className="text-xs text-muted-foreground truncate">
-                    {user?.phoneNumber}
+                    {user?.email}
                   </span>
                 </div>
               </div>

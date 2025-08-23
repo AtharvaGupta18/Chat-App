@@ -139,9 +139,9 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
           </AvatarFallback>
         </Avatar>
         <div>
-          <h2 className="font-semibold">{recipient.phoneNumber}</h2>
+          <h2 className="font-semibold">{recipient.email}</h2>
           <p className="text-xs text-muted-foreground">
-            {recipient.isAbusive ? "This user might be abusive" : "Online"}
+            Online
           </p>
         </div>
       </header>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/components/providers";
-import PhoneLogin from "@/components/auth/phone-login";
+import EmailPasswordLogin from "@/components/auth/email-password-login";
 import ChatLayout from "@/components/chat/chat-layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WhisperLinkLogo } from "@/components/icons";
@@ -24,7 +24,7 @@ export default function Home() {
   }
 
   if (!user) {
-    return <PhoneLogin />;
+    return <EmailPasswordLogin />;
   }
 
   return <ChatLayout />;

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -7,7 +6,7 @@ import {
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
-import { Loader2, KeyRound, Mail, User } from "lucide-react";
+import { Loader2, KeyRound, Mail } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -99,7 +98,7 @@ export default function EmailPasswordLogin() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="signin">
+          <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>

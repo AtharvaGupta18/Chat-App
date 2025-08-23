@@ -15,8 +15,7 @@ import { Button } from "../ui/button";
 
 export interface ChatUser {
   uid: string;
-  phoneNumber: string | null;
-  isAbusive?: boolean | "checking";
+  email: string | null;
 }
 
 export default function ChatLayout() {
