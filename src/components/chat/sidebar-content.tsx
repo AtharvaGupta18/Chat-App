@@ -7,7 +7,7 @@ import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/components/providers";
 import { Button } from "@/components/ui/button";
-import { WhisperLinkLogo } from "../icons";
+import { GlimpseLogo } from "../icons";
 import UserList from "./user-list";
 import type { ChatUser } from "./chat-layout";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -32,8 +32,8 @@ export default function SidebarContent({ onSelectUser, selectedUser }: SidebarCo
   return (
     <div className="flex flex-col h-screen">
       <header className="flex items-center gap-2 p-4 border-b">
-        <WhisperLinkLogo className="h-8 w-8 text-primary" />
-        <span className="text-lg font-semibold">WhisperLink</span>
+        <GlimpseLogo className="h-8 w-8 text-primary" />
+        <span className="text-lg font-semibold">Glimpse</span>
       </header>
       <div className="flex-1">
         <ScrollArea className="h-full">

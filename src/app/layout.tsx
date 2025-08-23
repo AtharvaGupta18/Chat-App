@@ -4,7 +4,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
-  title: "WhisperLink",
+  title: "Glimpse",
   description: "A secure, real-time one-to-one chat application.",
   viewport: "width=device-width, initial-scale=1",
 };
