@@ -14,6 +14,7 @@ import {
   getDoc,
   writeBatch,
   increment,
+  updateDoc,
 } from "firebase/firestore";
 import { SendHorizonal, User as UserIcon } from "lucide-react";
 import { firestore } from "@/lib/firebase";
