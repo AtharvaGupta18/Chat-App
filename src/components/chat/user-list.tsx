@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
@@ -57,7 +58,6 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
       });
     } finally {
       setReloading(false);
-      setLoading(false);
     }
   }, [currentUser, toast]);
 
@@ -79,14 +79,21 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
         }
       });
       setUsers(usersData);
-      setLoading(false);
+      if (loading) {
+        setLoading(false);
+      }
     }, (error) => {
       console.error("Error on snapshot:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not fetch real-time user updates.",
+      });
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [currentUser]);
+  }, [currentUser, loading, toast]);
 
   const sortedUsers = useMemo(() => {
     return [...users].sort((a, b) => {
@@ -100,7 +107,7 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
     fetchUsers();
   };
 
-  if (loading) {
+  if (loading && users.length === 0) {
     return (
       <SidebarContent>
         <SidebarGroup>

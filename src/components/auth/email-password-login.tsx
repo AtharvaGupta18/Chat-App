@@ -1,9 +1,11 @@
+
 "use client";
 
 import { useState } from "react";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  updateProfile,
 } from "firebase/auth";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { Loader2, KeyRound, Mail } from "lucide-react";
@@ -55,9 +57,13 @@ export default function EmailPasswordLogin() {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const newUser = userCredential.user;
         
+        // Set a display name for the new user, which can be their email.
+        await updateProfile(newUser, { displayName: newUser.email });
+
         await setDoc(doc(firestore, "users", newUser.uid), {
             uid: newUser.uid,
             email: newUser.email,
+            displayName: newUser.email,
             createdAt: serverTimestamp(),
         });
         
