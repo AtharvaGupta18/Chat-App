@@ -465,7 +465,7 @@ export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
                           <p className="truncate">{message.replyTo.text}</p>
                         </div>
                       )}
-                      <div className="flex items-end gap-2 max-w-xs md:max-w-md lg:max-w-lg">
+                      <div className="flex items-end gap-2 max-w-sm md:max-w-md lg:max-w-lg">
                         <p className="text-sm break-words">{message.text}</p>
                         <div className="flex-shrink-0 self-end flex items-center gap-1">
                           {message.isEdited && <span className="text-xs text-primary-foreground/70">(edited)</span>}
