@@ -13,7 +13,7 @@ import {
   setDoc,
   getDoc,
 } from "firebase/firestore";
-import { SendHorizonal, User as UserIcon } from "lucide-react";
+import { SendHorizonal, User as UserIcon, Smile } from "lucide-react";
 import { firestore } from "@/lib/firebase";
 import { useAuth } from "@/components/providers";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { ChatUser } from "./chat-layout";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface ChatWindowProps {
   recipient: ChatUser;
@@ -192,6 +197,29 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
 
       <footer className="border-t p-4">
         <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+           <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Smile className="h-5 w-5" />
+                <span className="sr-only">Add emoji</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto border-0 bg-transparent shadow-none">
+              <div className="grid grid-cols-6 gap-2 rounded-lg border bg-popover p-2">
+                {'👍❤️😂😊🙏🤔'.split('').map(emoji => (
+                  <Button
+                    key={emoji}
+                    variant="ghost"
+                    size="icon"
+                    className="text-2xl hover:bg-accent"
+                    onClick={() => setNewMessage(newMessage + emoji)}
+                  >
+                    {emoji}
+                  </Button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
           <Input
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
