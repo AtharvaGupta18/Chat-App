@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
-import { User, RefreshCw, Search } from "lucide-react";
+import { User, Search } from "lucide-react";
 import {
   SidebarContent,
   SidebarGroup,
@@ -17,13 +17,19 @@ import { firestore } from "@/lib/firebase";
 import { useAuth } from "@/components/providers";
 import type { ChatUser } from "./chat-layout";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "../ui/input";
+import { Badge } from "@/components/ui/badge";
 
 interface UserListProps {
   onSelectUser: (user: ChatUser) => void;
   selectedUser: ChatUser | null;
+}
+
+interface ChatData {
+  id: string;
+  unreadCount: { [key: string]: number };
+  users: string[];
 }
 
 export default function UserList({ onSelectUser, selectedUser }: UserListProps) {
@@ -32,13 +38,14 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
+  const [chats, setChats] = useState<ChatData[]>([]);
 
   useEffect(() => {
     if (!currentUser) return;
 
     setLoading(true);
-    const q = query(collection(firestore, "users"), where("uid", "!=", currentUser.uid));
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    const usersQuery = query(collection(firestore, "users"), where("uid", "!=", currentUser.uid));
+    const usersUnsubscribe = onSnapshot(usersQuery, (querySnapshot) => {
       const usersData: ChatUser[] = [];
       querySnapshot.forEach((doc) => {
         usersData.push(doc.data() as ChatUser);
@@ -46,7 +53,7 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
       setUsers(usersData);
       setLoading(false);
     }, (error) => {
-      console.error("Error on snapshot:", error);
+      console.error("Error fetching users:", error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -55,8 +62,20 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
       setLoading(false);
     });
 
-    return () => unsubscribe();
-  }, [currentUser]);
+    const chatsQuery = query(collection(firestore, "chats"), where("users", "array-contains", currentUser.uid));
+    const chatsUnsubscribe = onSnapshot(chatsQuery, (snapshot) => {
+        const chatsData = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        } as ChatData));
+        setChats(chatsData);
+    });
+
+    return () => {
+        usersUnsubscribe();
+        chatsUnsubscribe();
+    };
+  }, [currentUser, toast]);
 
   const filteredUsers = useMemo(() => {
     return users.filter(user => 
@@ -68,6 +87,14 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
       return nameA.localeCompare(nameB);
     });
   }, [users, searchQuery]);
+
+  const getUnreadCountForUser = (otherUserUid: string) => {
+    if (!currentUser) return 0;
+    const chatId = [currentUser.uid, otherUserUid].sort().join("_");
+    const chat = chats.find(c => c.id === chatId);
+    return chat?.unreadCount?.[currentUser.uid] || 0;
+  };
+
 
   if (loading) {
     return (
@@ -98,12 +125,14 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
         </div>
         <SidebarGroupLabel>All Users</SidebarGroupLabel>
         <SidebarMenu>
-          {filteredUsers.map((user) => (
+          {filteredUsers.map((user) => {
+            const unreadCount = getUnreadCountForUser(user.uid);
+            return (
             <SidebarMenuItem key={user.uid}>
               <SidebarMenuButton
                 onClick={() => onSelectUser(user)}
                 isActive={selectedUser?.uid === user.uid}
-                className="w-full justify-start"
+                className="w-full justify-start relative"
                 tooltip={user.displayName || user.email || 'Unknown user'}
               >
                 <Avatar className="h-6 w-6">
@@ -116,9 +145,14 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
                   <span className="truncate font-medium">{user.displayName || user.email}</span>
                   <span className="truncate text-xs text-muted-foreground">@{user.username}</span>
                 </div>
+                {unreadCount > 0 && (
+                    <Badge className="absolute right-2 top-1/2 -translate-y-1/2 h-5 min-w-[1.25rem] px-1.5 text-xs">
+                        {unreadCount}
+                    </Badge>
+                )}
               </SidebarMenuButton>
             </SidebarMenuItem>
-          ))}
+          )})}
         </SidebarMenu>
       </SidebarGroup>
     </SidebarContent>

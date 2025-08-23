@@ -12,6 +12,8 @@ import {
   doc,
   setDoc,
   getDoc,
+  writeBatch,
+  increment,
 } from "firebase/firestore";
 import { SendHorizonal, User as UserIcon } from "lucide-react";
 import { firestore } from "@/lib/firebase";
@@ -48,7 +50,19 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
       : null;
 
   useEffect(() => {
-    if (!chatId) return;
+    if (!chatId || !currentUser) return;
+
+    const resetUnreadCount = async () => {
+      const chatDocRef = doc(firestore, "chats", chatId);
+      const chatDoc = await getDoc(chatDocRef);
+      if (chatDoc.exists()) {
+        await updateDoc(chatDocRef, {
+          [`unreadCount.${currentUser.uid}`]: 0,
+        });
+      }
+    };
+    
+    resetUnreadCount();
 
     setLoading(true);
     const messagesQuery = query(
@@ -63,13 +77,14 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
       } as Message));
       setMessages(newMessages);
       setLoading(false);
+       resetUnreadCount();
     }, (error) => {
         console.error("Error fetching messages:", error);
         setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [chatId, recipient]);
+  }, [chatId, currentUser, recipient]);
 
   useEffect(() => {
     if (viewportRef.current) {
@@ -93,27 +108,37 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
 
     try {
         const chatDoc = await getDoc(chatDocRef);
+        const batch = writeBatch(firestore);
+
         if(!chatDoc.exists()){
-             await setDoc(chatDocRef, {
+            batch.set(chatDocRef, {
                 users: [currentUser.uid, recipient.uid],
                 userEmails: [currentUser.email, recipient.email],
                 createdAt: serverTimestamp(),
                 lastMessage: messageText,
                 lastMessageTimestamp: serverTimestamp(),
+                unreadCount: {
+                  [currentUser.uid]: 0,
+                  [recipient.uid]: 1,
+                }
             });
         } else {
-             await setDoc(chatDocRef, {
+            batch.update(chatDocRef, {
                 lastMessage: messageText,
                 lastMessageTimestamp: serverTimestamp(),
-            }, { merge: true });
+                [`unreadCount.${recipient.uid}`]: increment(1),
+            });
         }
      
-      await addDoc(messagesColRef, {
+      const newMessageRef = doc(messagesColRef);
+      batch.set(newMessageRef, {
         text: messageText,
         senderId: currentUser.uid,
         createdAt: serverTimestamp(),
       });
       
+      await batch.commit();
+
     } catch (error) {
       console.error("Error sending message: ", error);
     }
