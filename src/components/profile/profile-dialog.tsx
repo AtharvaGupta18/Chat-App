@@ -19,7 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera, Edit, Loader2 } from "lucide-react";
 import { updateProfile } from "firebase/auth";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, getDocs, collection, query, where } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { firestore, storage, auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
@@ -29,6 +29,7 @@ export default function ProfileDialog() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(userDetails?.displayName || "");
+  const [username, setUsername] = useState(userDetails?.username || "");
   const [bio, setBio] = useState(userDetails?.bio || "");
   const [profilePic, setProfilePic] = useState<File | null>(null);
   const [profilePicPreview, setProfilePicPreview] = useState<string | null>(userDetails?.photoURL || null);
@@ -44,11 +45,26 @@ export default function ProfileDialog() {
   };
 
   const handleSaveChanges = async () => {
-    if (!user) return;
+    if (!user || !userDetails) return;
     setLoading(true);
 
     try {
       let photoURL = userDetails?.photoURL || "";
+
+      if (username !== userDetails.username) {
+        const usersRef = collection(firestore, "users");
+        const q = query(usersRef, where("username", "==", username));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: "Username is already taken.",
+            });
+            setLoading(false);
+            return;
+        }
+      }
 
       if (profilePic) {
         const storageRef = ref(storage, `profile_pictures/${user.uid}`);
@@ -59,6 +75,7 @@ export default function ProfileDialog() {
       const userDocRef = doc(firestore, "users", user.uid);
       await updateDoc(userDocRef, {
         displayName: name,
+        username: username,
         bio: bio,
         photoURL: photoURL,
       });
@@ -130,6 +147,15 @@ export default function ProfileDialog() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Your Name"
+            />
+          </div>
+           <div className="space-y-2">
+            <Label htmlFor="username">Username</Label>
+            <Input
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value.trim())}
+              placeholder="Your unique username"
             />
           </div>
           <div className="space-y-2">

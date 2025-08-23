@@ -7,8 +7,8 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
 } from "firebase/auth";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
-import { Loader2, KeyRound, Mail, User as UserIcon } from "lucide-react";
+import { doc, serverTimestamp, setDoc, getDocs, query, where, collection } from "firebase/firestore";
+import { Loader2, KeyRound, Mail, User as UserIcon, AtSign } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,7 @@ import {
 
 export default function EmailPasswordLogin() {
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLogin, setIsLogin] = useState(true);
@@ -55,6 +56,21 @@ export default function EmailPasswordLogin() {
     } else {
       // Sign Up
       try {
+        // Check for username uniqueness
+        const usersRef = collection(firestore, "users");
+        const q = query(usersRef, where("username", "==", username));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          toast({
+            variant: "destructive",
+            title: "Sign-up Failed",
+            description: "Username is already taken. Please choose another one.",
+          });
+          setLoading(false);
+          return;
+        }
+
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const newUser = userCredential.user;
         
@@ -64,6 +80,7 @@ export default function EmailPasswordLogin() {
             uid: newUser.uid,
             email: newUser.email,
             displayName: name,
+            username: username,
             createdAt: serverTimestamp(),
             bio: "",
             photoURL: "",
@@ -102,6 +119,7 @@ export default function EmailPasswordLogin() {
       <CardContent>
         <form onSubmit={handleAuthAction} className="space-y-4">
          {!isLogin && (
+          <>
             <div className="relative">
               <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
@@ -114,6 +132,19 @@ export default function EmailPasswordLogin() {
                 className="pl-10"
               />
             </div>
+            <div className="relative">
+              <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value.trim())}
+                placeholder="Username"
+                disabled={loading}
+                required
+                className="pl-10"
+              />
+            </div>
+          </>
           )}
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />

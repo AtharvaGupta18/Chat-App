@@ -18,6 +18,7 @@ export interface ChatUser {
   displayName: string | null;
   photoURL: string | null;
   bio: string | null;
+  username: string | null;
 }
 
 export default function ChatLayout() {
