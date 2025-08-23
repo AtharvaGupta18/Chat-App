@@ -166,7 +166,7 @@ export default function ChatWindow({ recipient }: ChatWindowProps) {
 
   const MessageStatus = ({ status }: { status: Message['status'] }) => {
     if (status === 'read') {
-      return <CheckCheck className="h-4 w-4 text-primary-foreground" />;
+      return <CheckCheck className="h-4 w-4 text-blue-500" />;
     }
     if (status === 'delivered') {
       return <CheckCheck className="h-4 w-4 text-primary-foreground/70" />;
