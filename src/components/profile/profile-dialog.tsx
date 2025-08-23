@@ -23,7 +23,6 @@ import { doc, updateDoc, getDocs, collection, query, where } from "firebase/fire
 import { firestore, auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { cn, generateAvatarColor, getInitials } from "@/lib/utils";
-import { getMessagingToken, isSupported } from "@/lib/firebase-messaging";
 
 export default function ProfileDialog() {
   const { user, userDetails } = useAuth();
@@ -33,7 +32,6 @@ export default function ProfileDialog() {
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
   const [loading, setLoading] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
   useEffect(() => {
     if (userDetails) {
@@ -41,31 +39,7 @@ export default function ProfileDialog() {
       setUsername(userDetails.username || "");
       setBio(userDetails.bio || "");
     }
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      setNotificationsEnabled(Notification.permission === 'granted');
-    }
   }, [userDetails, open]);
-
-  const handleEnableNotifications = async () => {
-    if (!(await isSupported())) {
-        toast({ variant: "destructive", title: "Unsupported", description: "Notifications are not supported on this browser." });
-        return;
-    }
-
-    const permission = await Notification.requestPermission();
-    if (permission === 'granted') {
-        const token = await getMessagingToken();
-        if (token && user) {
-            await updateDoc(doc(firestore, "users", user.uid), { fcmToken: token });
-            toast({ title: "Success", description: "Notifications have been enabled." });
-            setNotificationsEnabled(true);
-        } else {
-            toast({ variant: "destructive", title: "Error", description: "Could not get notification token." });
-        }
-    } else {
-        toast({ variant: "destructive", title: "Permissions Denied", description: "You have not granted permission for notifications." });
-    }
-  }
 
   const handleSaveChanges = async () => {
     if (!user || !userDetails) return;
@@ -187,11 +161,6 @@ export default function ProfileDialog() {
               placeholder="Tell us a little about yourself"
             />
           </div>
-           {!notificationsEnabled && (
-                <Button onClick={handleEnableNotifications} variant="outline" className="w-full">
-                    Enable Notifications
-                </Button>
-            )}
         </div>
         <DialogFooter>
           <DialogClose asChild>

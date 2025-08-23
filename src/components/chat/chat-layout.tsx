@@ -10,7 +10,6 @@ export interface ChatUser {
     photoURL?: string | null;
     username?: string | null;
     bio?: string | null;
-    fcmToken?: string | null;
 }
 
 export interface ChatLayoutProps {

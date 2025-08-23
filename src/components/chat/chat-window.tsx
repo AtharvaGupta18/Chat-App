@@ -30,7 +30,6 @@ import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { getInitials, generateAvatarColor } from "@/lib/utils";
-import { sendNotification } from "@/ai/flows/send-notification-flow";
 
 interface ChatWindowProps {
   recipient: ChatUser;
@@ -172,16 +171,6 @@ export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
       });
       
       await batch.commit();
-
-      if (recipient.fcmToken) {
-          await sendNotification({
-              title: userDetails.displayName || userDetails.username || 'New Message',
-              body: messageText,
-              token: recipient.fcmToken
-          });
-      }
-
-
     } catch (error) {
       console.error("Error sending message: ", error);
     }
