@@ -17,6 +17,7 @@ import { firestore } from "@/lib/firebase";
 import { useAuth } from "@/components/providers";
 import type { ChatUser } from "./chat-layout";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface UserListProps {
   onSelectUser: (user: ChatUser) => void;
