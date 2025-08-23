@@ -437,7 +437,10 @@ function ChatMessage({
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: any) => {
     const dragThreshold = 50;
-    if (info.offset.x > dragThreshold) {
+    if (info.offset.x > dragThreshold && !isCurrentUser) {
+      onReply(message);
+    }
+    if (info.offset.x < -dragThreshold && isCurrentUser) {
       onReply(message);
     }
     controls.start({ x: 0 });
@@ -460,17 +463,17 @@ function ChatMessage({
         isCurrentUser ? "justify-end" : "justify-start"
       )}
     >
-       <div className={cn("absolute flex items-center h-full -z-10", isCurrentUser ? "right-full mr-2" : "left-full ml-2" )}>
+       <div className={cn("absolute flex items-center h-full -z-10", isCurrentUser ? "left-full ml-2" : "right-full mr-2" )}>
             <Reply className="h-5 w-5 text-muted-foreground" />
        </div>
 
       <motion.div
         ref={dragRef}
         drag="x"
-        dragConstraints={{ left: 0, right: 0 }}
+        dragConstraints={ isCurrentUser ? { left: 0, right: 0 } : { left: 0, right: 0}}
         onDragEnd={handleDragEnd}
         animate={controls}
-        dragElastic={{ right: 0.1, left: 0 }}
+        dragElastic={{ right: isCurrentUser ? 0 : 0.1, left: isCurrentUser ? 0.1 : 0 }}
         className={cn(
             "flex items-end gap-1 w-full",
             isCurrentUser ? "justify-end" : "justify-start"
@@ -515,6 +518,31 @@ function ChatMessage({
         ) : (
           <>
             <div className="flex items-center gap-2">
+              <div
+                className={cn(
+                  "rounded-lg px-4 py-2 flex flex-col",
+                  isCurrentUser
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted"
+                )}
+              >
+                {message.replyTo && (
+                  <div className="border-l-2 border-primary-foreground/50 pl-2 mb-2 text-xs text-primary-foreground/80 bg-black/10 p-2 rounded-md">
+                    <p className="font-semibold">{message.replyTo.senderId === currentUser?.uid ? "You" : message.replyTo.senderName}</p>
+                    <p className="truncate">{message.replyTo.text}</p>
+                  </div>
+                )}
+                <div className="flex items-end gap-2 max-w-sm md:max-w-md lg:max-w-lg">
+                  <p className="text-sm break-words whitespace-pre-wrap">{message.text}</p>
+                  <div className="flex-shrink-0 self-end flex items-center gap-1">
+                    {message.isEdited && <span className="text-xs text-primary-foreground/70">(edited)</span>}
+                    {isCurrentUser && (
+                      <MessageStatus status={message.status} />
+                    )}
+                  </div>
+                </div>
+              </div>
+              
               {isCurrentUser && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -562,31 +590,6 @@ function ChatMessage({
                   <Reply className="h-5 w-5" />
                 </Button>
               )}
-
-              <div
-                className={cn(
-                  "rounded-lg px-4 py-2 flex flex-col",
-                  isCurrentUser
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-                )}
-              >
-                {message.replyTo && (
-                  <div className="border-l-2 border-primary-foreground/50 pl-2 mb-2 text-xs text-primary-foreground/80 bg-black/10 p-2 rounded-md">
-                    <p className="font-semibold">{message.replyTo.senderId === currentUser?.uid ? "You" : message.replyTo.senderName}</p>
-                    <p className="truncate">{message.replyTo.text}</p>
-                  </div>
-                )}
-                <div className="flex items-end gap-2 max-w-sm md:max-w-md lg:max-w-lg">
-                  <p className="text-sm break-words whitespace-pre-wrap">{message.text}</p>
-                  <div className="flex-shrink-0 self-end flex items-center gap-1">
-                    {message.isEdited && <span className="text-xs text-primary-foreground/70">(edited)</span>}
-                    {isCurrentUser && (
-                      <MessageStatus status={message.status} />
-                    )}
-                  </div>
-                </div>
-              </div>
             </div>
           </>
         )}
