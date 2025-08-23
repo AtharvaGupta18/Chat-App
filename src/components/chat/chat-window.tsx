@@ -20,7 +20,7 @@ import {
   deleteDoc,
   limit,
 } from "firebase/firestore";
-import { SendHorizonal, User as UserIcon, Check, CheckCheck, ArrowLeft, MoreHorizontal, FilePen, Trash, Loader2 } from "lucide-react";
+import { SendHorizonal, User as UserIcon, Check, CheckCheck, ArrowLeft, MoreHorizontal, FilePen, Trash, Loader2, Reply, X } from "lucide-react";
 import { firestore } from "@/lib/firebase";
 import { useAuth } from "@/components/providers";
 import { Input } from "@/components/ui/input";
@@ -49,6 +49,12 @@ interface Message {
   createdAt: any;
   status: 'sent' | 'delivered' | 'read';
   isEdited?: boolean;
+  replyTo?: {
+    messageId: string;
+    text: string;
+    senderId: string;
+    senderName: string;
+  };
 }
 
 export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
@@ -60,6 +66,7 @@ export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
 
   const chatId =
@@ -146,6 +153,23 @@ export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
     const messageText = newMessage;
     setNewMessage("");
 
+    const messageData: any = {
+      text: messageText,
+      senderId: currentUser.uid,
+      createdAt: serverTimestamp(),
+      status: 'delivered',
+    };
+
+    if (replyingTo) {
+      messageData.replyTo = {
+        messageId: replyingTo.id,
+        text: replyingTo.text,
+        senderId: replyingTo.senderId,
+        senderName: replyingTo.senderId === currentUser.uid ? userDetails.displayName : recipient.displayName,
+      };
+      setReplyingTo(null);
+    }
+
     const chatDocRef = doc(firestore, "chats", chatId);
     const messagesColRef = collection(chatDocRef, "messages");
 
@@ -174,12 +198,7 @@ export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
         }
      
       const newMessageRef = doc(messagesColRef);
-      batch.set(newMessageRef, {
-        text: messageText,
-        senderId: currentUser.uid,
-        createdAt: serverTimestamp(),
-        status: 'delivered',
-      });
+      batch.set(newMessageRef, messageData);
       
       await batch.commit();
     } catch (error) {
@@ -190,6 +209,14 @@ export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
   const handleEditMessage = (message: Message) => {
     setEditingMessageId(message.id);
     setEditingText(message.text);
+  };
+
+  const handleReplyToMessage = (message: Message) => {
+    setReplyingTo(message);
+  };
+
+  const handleCancelReply = () => {
+    setReplyingTo(null);
   };
 
   const handleCancelEdit = () => {
@@ -375,57 +402,78 @@ export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
                   </div>
                 ) : (
                   <>
-                  {message.senderId === currentUser?.uid && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <MoreHorizontal className="h-5 w-5"/>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => handleEditMessage(message)}>
-                          <FilePen className="mr-2 h-4 w-4" />
-                          <span>Edit</span>
-                        </DropdownMenuItem>
-                         <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                    <Trash className="mr-2 h-4 w-4" />
-                                    <span>Delete</span>
-                                </DropdownMenuItem>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This action cannot be undone. This will permanently delete your message.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteMessage(message.id)}>
-                                        Delete
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                  <div
-                    className={cn(
-                        "max-w-xs rounded-lg px-4 py-2 md:max-w-md lg:max-w-lg flex items-end gap-2",
-                        message.senderId === currentUser?.uid
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
+                  <div className="flex items-center gap-2">
+                    {message.senderId === currentUser?.uid && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <MoreHorizontal className="h-5 w-5"/>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem onClick={() => handleReplyToMessage(message)}>
+                            <Reply className="mr-2 h-4 w-4" />
+                            <span>Reply</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditMessage(message)}>
+                            <FilePen className="mr-2 h-4 w-4" />
+                            <span>Edit</span>
+                          </DropdownMenuItem>
+                          <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                      <Trash className="mr-2 h-4 w-4" />
+                                      <span>Delete</span>
+                                  </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                          This action cannot be undone. This will permanently delete your message.
+                                      </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDeleteMessage(message.id)}>
+                                          Delete
+                                      </AlertDialogAction>
+                                  </AlertDialogFooter>
+                              </AlertDialogContent>
+                          </AlertDialog>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     )}
-                  >
-                    <p className="text-sm break-words">{message.text}</p>
-                    <div className="flex-shrink-0 self-end flex items-center gap-1">
-                      {message.isEdited && <span className="text-xs text-primary-foreground/70">(edited)</span>}
-                      {message.senderId === currentUser?.uid && (
-                          <MessageStatus status={message.status} />
+                    
+                    {message.senderId !== currentUser?.uid && (
+                       <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleReplyToMessage(message)}>
+                          <Reply className="h-5 w-5"/>
+                        </Button>
+                    )}
+                    
+                    <div
+                        className={cn(
+                            "rounded-lg px-4 py-2 flex flex-col",
+                            message.senderId === currentUser?.uid
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted"
+                        )}
+                    >
+                      {message.replyTo && (
+                        <div className="border-l-2 border-primary-foreground/50 pl-2 mb-2 text-xs text-primary-foreground/80 bg-black/10 p-2 rounded-md">
+                          <p className="font-semibold">{message.replyTo.senderId === currentUser?.uid ? "You" : message.replyTo.senderName}</p>
+                          <p className="truncate">{message.replyTo.text}</p>
+                        </div>
                       )}
+                      <div className="flex items-end gap-2 max-w-xs md:max-w-md lg:max-w-lg">
+                        <p className="text-sm break-words">{message.text}</p>
+                        <div className="flex-shrink-0 self-end flex items-center gap-1">
+                          {message.isEdited && <span className="text-xs text-primary-foreground/70">(edited)</span>}
+                          {message.senderId === currentUser?.uid && (
+                              <MessageStatus status={message.status} />
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                   </>
@@ -444,7 +492,18 @@ export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
         </div>
       </ScrollArea>
 
-      <footer className="border-t p-4">
+      <footer className="border-t p-4 space-y-2">
+        {replyingTo && (
+            <div className="p-2 bg-muted rounded-md flex justify-between items-center text-sm">
+                <div>
+                    <p className="font-semibold text-primary">Replying to {replyingTo.senderId === currentUser?.uid ? 'yourself' : recipient.displayName}</p>
+                    <p className="text-muted-foreground truncate">{replyingTo.text}</p>
+                </div>
+                <Button variant="ghost" size="icon" onClick={handleCancelReply}>
+                    <X className="h-4 w-4" />
+                </Button>
+            </div>
+        )}
         <form onSubmit={handleSendMessage} className="flex items-center gap-2">
           <Input
             value={newMessage}
@@ -462,5 +521,3 @@ export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
     </div>
   );
 }
-
-    
