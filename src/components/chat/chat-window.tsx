@@ -312,7 +312,7 @@ export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
         <Dialog>
             <DialogTrigger asChild>
                 <div className="flex items-center gap-4 cursor-pointer hover:bg-muted p-2 rounded-md transition-colors flex-1">
-                    <Avatar className={cn('ring-2 ring-offset-2 ring-offset-background', recipientAvatarColors?.ring)}>
+                    <Avatar className={cn('ring-2 ring-offset-2 ring-offset-background')}>
                     <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
                     <AvatarFallback className={cn("text-white", recipientAvatarColors.bg)}>
                         {getInitials(recipient.displayName || recipient.email || "")}
@@ -433,7 +433,7 @@ function ChatMessage({
   const dragRef = useRef<HTMLDivElement>(null);
 
   const recipientAvatarColors = generateAvatarColor(recipient.uid);
-  const currentUserAvatarColors = userDetails ? generateAvatarColor(userDetails.uid) : {};
+  const currentUserAvatarColors = userDetails ? generateAvatarColor(userDetails.uid) : generateAvatarColor('');
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: any) => {
     const dragThreshold = 50;
@@ -459,7 +459,7 @@ function ChatMessage({
   return (
     <div
       className={cn(
-        "flex items-end gap-1 group relative",
+        "flex items-end group relative",
         isCurrentUser ? "justify-end" : "justify-start"
       )}
     >
