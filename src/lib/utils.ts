@@ -19,19 +19,4 @@ export function getInitials(name: string) {
   return `${firstNameInitial}${lastNameInitial}`.toUpperCase();
 }
 
-const AVATAR_COLORS = [
-    { bg: "bg-blue-500", ring: "ring-blue-600" },
-    { bg: "bg-green-500", ring: "ring-green-600" },
-    { bg: "bg-purple-500", ring: "ring-purple-600" },
-    { bg: "bg-red-500", ring: "ring-red-600" },
-    { bg: "bg-yellow-500", ring: "ring-yellow-600" },
-    { bg: "bg-indigo-500", ring: "ring-indigo-600" },
-    { bg: "bg-pink-500", ring: "ring-pink-600" },
-    { bg: "bg-teal-500", ring: "ring-teal-600" },
-];
-
-export function generateAvatarColor(id: string) {
-    const charCodeSum = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const index = charCodeSum % AVATAR_COLORS.length;
-    return AVATAR_COLORS[index];
-}
+    
