@@ -605,6 +605,4 @@ function ChatMessage({
       </motion.div>
     </div>
   );
-}
-
-    
+}   
