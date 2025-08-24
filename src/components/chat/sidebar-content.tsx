@@ -12,7 +12,7 @@ import UserList from "./user-list";
 import type { ChatUser } from "./chat-layout";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import ProfileDialog from "../profile/profile-dialog";
-import { cn, generateAvatarColor, getInitials } from "@/lib/utils";
+import { cn, getInitials } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface SidebarContentProps {
@@ -26,8 +26,6 @@ export default function SidebarContent({ onSelectUser, selectedUser }: SidebarCo
   const handleLogout = async () => {
     await signOut(auth);
   };
-
-  const userAvatarColors = userDetails ? generateAvatarColor(userDetails.uid) : {};
 
   return (
     <div className="flex flex-col h-screen">
@@ -43,9 +41,9 @@ export default function SidebarContent({ onSelectUser, selectedUser }: SidebarCo
       <footer className="p-4 border-t">
         <div className="flex w-full items-center justify-between">
             <div className="flex items-center gap-2 overflow-hidden">
-            {userDetails && <Avatar className={cn("h-8 w-8 ring-2 ring-offset-2 ring-offset-background", userAvatarColors.ring)}>
+            {userDetails && <Avatar className={cn("h-8 w-8 ring-2 ring-offset-2 ring-offset-background")}>
                 <AvatarImage src={userDetails?.photoURL || undefined} alt={userDetails?.displayName || ''} />
-                <AvatarFallback className={cn("text-white", userAvatarColors.bg)}>
+                <AvatarFallback className={cn("text-white")}>
                 {getInitials(userDetails?.displayName || userDetails?.email || "")}
                 </AvatarFallback>
             </Avatar>}
@@ -73,3 +71,5 @@ export default function SidebarContent({ onSelectUser, selectedUser }: SidebarCo
     </div>
   );
 }
+
+    
