@@ -33,7 +33,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { getInitials, generateAvatarColor } from "@/lib/utils";
+import { getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "../ui/textarea";
 import { motion, useAnimation } from "framer-motion";
@@ -285,8 +285,6 @@ export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
     }
   };
   
-  const recipientAvatarColors = recipient ? generateAvatarColor(recipient.uid) : {};
-
   if (loading) {
     return (
       <div className="flex h-full flex-col">
@@ -314,7 +312,7 @@ export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
                 <div className="flex items-center gap-4 cursor-pointer hover:bg-muted p-2 rounded-md transition-colors flex-1">
                     <Avatar className={cn('ring-2 ring-offset-2 ring-offset-background')}>
                     <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
-                    <AvatarFallback className={cn("text-white", recipientAvatarColors.bg)}>
+                    <AvatarFallback className={cn("text-white")}>
                         {getInitials(recipient.displayName || recipient.email || "")}
                     </AvatarFallback>
                     </Avatar>
@@ -326,9 +324,9 @@ export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
             <DialogContent>
                 <DialogHeader>
                     <div className="flex flex-col items-center text-center gap-4">
-                        <Avatar className={cn('h-24 w-24 ring-2 ring-offset-2 ring-offset-background', recipientAvatarColors.ring)}>
+                        <Avatar className={cn('h-24 w-24 ring-2 ring-offset-2 ring-offset-background')}>
                             <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
-                            <AvatarFallback className={cn("text-4xl text-white", recipientAvatarColors.bg)}>
+                            <AvatarFallback className={cn("text-4xl text-white")}>
                             {getInitials(recipient.displayName || recipient.email || "")}
                             </AvatarFallback>
                         </Avatar>
@@ -432,9 +430,6 @@ function ChatMessage({
   const controls = useAnimation();
   const dragRef = useRef<HTMLDivElement>(null);
 
-  const recipientAvatarColors = generateAvatarColor(recipient.uid);
-  const currentUserAvatarColors = userDetails ? generateAvatarColor(userDetails.uid) : generateAvatarColor('');
-
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: any) => {
     const dragThreshold = 50;
     if (info.offset.x > dragThreshold && !isCurrentUser) {
@@ -475,7 +470,7 @@ function ChatMessage({
         animate={controls}
         dragElastic={{ right: isCurrentUser ? 0 : 0.1, left: isCurrentUser ? 0.1 : 0 }}
         className={cn(
-            "flex items-end gap-1 w-full",
+            "flex items-end gap-2 w-full",
             isCurrentUser ? "justify-end" : "justify-start"
         )}
         style={{
@@ -484,9 +479,9 @@ function ChatMessage({
         }}
       >
         {!isCurrentUser && (
-          <Avatar className={cn('h-8 w-8 ring-2 ring-offset-2 ring-offset-background', recipientAvatarColors.ring)}>
+          <Avatar className={cn('h-8 w-8 ring-2 ring-offset-2 ring-offset-background')}>
             <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''} />
-            <AvatarFallback className={cn("text-white", recipientAvatarColors.bg)}>
+            <AvatarFallback className={cn("text-white")}>
               {getInitials(recipient.displayName || recipient.email || "")}
             </AvatarFallback>
           </Avatar>
@@ -600,9 +595,9 @@ function ChatMessage({
         )}
 
         {isCurrentUser && userDetails && editingMessageId !== message.id && (
-          <Avatar className={cn('h-8 w-8 ring-2 ring-offset-2 ring-offset-background', currentUserAvatarColors.ring)}>
+          <Avatar className={cn('h-8 w-8 ring-2 ring-offset-2 ring-offset-background')}>
             <AvatarImage src={userDetails?.photoURL || undefined} alt={userDetails?.displayName || ''} />
-            <AvatarFallback className={cn("text-white", currentUserAvatarColors.bg)}>
+            <AvatarFallback className={cn("text-white")}>
               {getInitials(userDetails?.displayName || userDetails?.email || "")}
             </AvatarFallback>
           </Avatar>
@@ -611,3 +606,5 @@ function ChatMessage({
     </div>
   );
 }
+
+    
