@@ -312,7 +312,7 @@ export default function ChatWindow({ recipient, onBack }: ChatWindowProps) {
         <Dialog>
             <DialogTrigger asChild>
                 <div className="flex items-center gap-4 cursor-pointer hover:bg-muted p-2 rounded-md transition-colors flex-1">
-                    <Avatar className={cn('ring-2 ring-offset-2 ring-offset-background', recipientAvatarColors.ring)}>
+                    <Avatar className={cn('ring-2 ring-offset-2 ring-offset-background', recipientAvatarColors?.ring)}>
                     <AvatarImage src={recipient.photoURL || undefined} alt={recipient.displayName || ''}/>
                     <AvatarFallback className={cn("text-white", recipientAvatarColors.bg)}>
                         {getInitials(recipient.displayName || recipient.email || "")}
