@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "../ui/input";
 import { Badge } from "@/components/ui/badge";
-import { cn, generateAvatarColor, getInitials } from "@/lib/utils";
+import { cn, getInitials } from "@/lib/utils";
 import { Skeleton } from "../ui/skeleton";
 import { Button } from "../ui/button";
 
@@ -143,19 +143,18 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
           {filteredAndSortedUsers.map((user, index) => {
             const chatData = getChatDataForUser(user.uid);
             const unreadCount = getUnreadCountForUser(chatData);
-            const userAvatarColors = generateAvatarColor(user.uid);
 
             return (
             <Fragment key={user.uid}>
               <Button
                   variant={selectedUser?.uid === user.uid ? "secondary" : "ghost"}
                   onClick={() => onSelectUser(user)}
-                  className="w-full h-auto justify-start p-2"
+                  className="w-full h-auto justify-start p-2 hover:bg-muted/50"
                 >
                   <div className="flex items-center gap-4 w-full">
-                      <Avatar className={cn("h-12 w-12 ring-2 ring-offset-2 ring-offset-background", userAvatarColors.ring)}>
+                      <Avatar className={cn("h-12 w-12 ring-2 ring-offset-2 ring-offset-background")}>
                       <AvatarImage src={user.photoURL || undefined} alt={user.displayName || ''} />
-                      <AvatarFallback className={cn("text-white text-xl", userAvatarColors.bg)}>
+                      <AvatarFallback className={cn("text-white text-xl")}>
                           {getInitials(user.displayName || user.email || "")}
                       </AvatarFallback>
                       </Avatar>
@@ -185,3 +184,5 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
       </div>
   );
 }
+
+    
