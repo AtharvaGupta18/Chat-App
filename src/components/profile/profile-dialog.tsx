@@ -22,7 +22,7 @@ import { updateProfile } from "firebase/auth";
 import { doc, updateDoc, getDocs, collection, query, where } from "firebase/firestore";
 import { firestore, auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { cn, generateAvatarColor, getInitials } from "@/lib/utils";
+import { cn, getInitials } from "@/lib/utils";
 
 export default function ProfileDialog() {
   const { user, userDetails } = useAuth();
@@ -110,8 +110,6 @@ export default function ProfileDialog() {
   
   if (!user || !userDetails) return null;
 
-  const userAvatarColors = generateAvatarColor(user.uid);
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -126,9 +124,9 @@ export default function ProfileDialog() {
         <div className="space-y-4">
           <div className="flex justify-center">
             <div className="relative">
-              <Avatar className={cn("h-24 w-24 ring-2 ring-offset-2 ring-offset-background", userAvatarColors.ring)}>
+              <Avatar className={cn("h-24 w-24 ring-2 ring-offset-2 ring-offset-background")}>
                 <AvatarImage src={userDetails.photoURL || undefined} alt="Profile Picture"/>
-                <AvatarFallback className={cn("text-4xl text-white", userAvatarColors.bg)}>
+                <AvatarFallback className={cn("text-4xl text-white")}>
                   {getInitials(name || userDetails?.email || "")}
                 </AvatarFallback>
               </Avatar>
